@@ -3,7 +3,7 @@
 - suppose we want to generate all passwords of length 2  
 - using characters: "ab"  
 
-### manual way (nested loops):
+### *** manual way (nested loops):
 ```python
 for a in "ab":
     for b in "ab":
@@ -22,7 +22,7 @@ for a in "ab":
 **!! IMPORTANT:**
 - more length = more nested loops = messy code
 
-### SOLUTION: ITERTOOLS.PRODUCT
+### *** SOLUTION: ITERTOOLS.PRODUCT
 - instead of writing loops inside loops
 - Python gives us a ready function: product()
 
@@ -48,14 +48,14 @@ for p in itertools.product("ab", repeat=2):
 - product() automatically does nested loops
 
 
-### WHAT IS "p" 
+### *** WHAT IS "p" 
 - in each loop:
 ```python
 p = ('a','b') → it's a tuple, not a string
 ```
 
 
-### PROBLEM: NEED STRING 
+### *** PROBLEM: NEED STRING 
 - we want: "ab"
 - but we have: ('a','b')
 - **solution → join()**
