@@ -15,7 +15,7 @@ str(i)  # "5"
 ```
 -------
 ### *** Using zfill
-- now we can use zfill(4) to make the length = 4
+- now we can use zfill(n) to make the string n digits long
 
 **=> ex:**
 ```python
@@ -36,5 +36,5 @@ str(i)  # "5"
 - store results in a list
 --------
 **!! Important:**
-ensures fixed-length format → 0001 instead of 1
-commonly used in brute force
+- ensures fixed-length format → 0001 instead of 1
+- commonly used in brute force
