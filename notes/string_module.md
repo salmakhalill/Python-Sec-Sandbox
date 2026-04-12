@@ -1,22 +1,31 @@
-## >>> STRING LIBRARY <<<
+## STRING LIBRARY 
 
-- Python has built-in module called `string`  
-- used to generate characters  
+- Python has built-in module called string
+- used to generate characters 
 
 ```python
 import string
-uppercase letters A-Z
+
+# -- uppercase letters A-Z
 string.ascii_uppercase
-lowercase letters a-z
+
+# -- lowercase letters a-z
 string.ascii_lowercase
-examples:
-string.ascii_uppercase  # "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-string.ascii_lowercase  # "abcdefghijklmnopqrstuvwxyz"
-NOTE:
-useful for brute force attacks with letters
-example:
+```
+
+**=> ex:** 
+```python
+string.ascii_uppercase → "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+string.ascii_lowercase → "abcdefghijklmnopqrstuvwxyz"
+```
+
+**=> ex:** generate all lowercase letters
+
+```python
 for c in string.ascii_lowercase:
     print(c)
-IMPORTANT:
-can combine with loops to generate passwords
-example: aa, ab, ac ... zz
+```
+
+**!! IMPORTANT:**
+- can combine with loops to generate passwords
+- example: aa, ab, ac ... zz
