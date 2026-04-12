@@ -30,9 +30,9 @@ for a in "ab":
 import itertools
 ```
 **? syntax:**
-itertools.product(iterable, repeat=n)
-iterable → characters
-repeat → number of loops (password length)
+- itertools.product(iterable, repeat=n)
+- iterable → characters
+- repeat → number of loops (password length)
 
 **=> ex:**  
 ```python
