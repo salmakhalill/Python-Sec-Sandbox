@@ -21,11 +21,17 @@ for c in string.ascii_lowercase:
 ```
 > => Output:
 
+
 > a
+
 > b
+
 > c
+
 > d
+
 > ...
+
 > z
 
 ------
@@ -36,4 +42,4 @@ for c in string.ascii_lowercase:
 - can be used to build combinations like:
 > aa, ab, ac ... zz
 
-- this is just a basic way → there are more powerful tools for generating combinations (like itertools)
+- this is just a basic way → there are more powerful tools for generating combinations (like *itertools*)
