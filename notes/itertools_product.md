@@ -1,4 +1,4 @@
-## >>> PROBLEM BEFORE ITERTOOLS <<<
+## PROBLEM BEFORE ITERTOOLS 
 
 - suppose we want to generate all passwords of length 2  
 - using characters: "ab"  
@@ -8,37 +8,49 @@
 for a in "ab":
     for b in "ab":
         print(a + b)
+```
 
-output:
+> output:
+> aa, ab, ba, bb
 
-aa, ab, ba, bb
-NOTE:
-this works for length = 2
-but if length = 3 → we need 3 loops
-IMPORTANT:
+**# NOTE:**
+- this works for length = 2
+- but if length = 3 → we need 3 loops
+
+**!! IMPORTANT:**
 more length = more nested loops = messy code
->>> SOLUTION: ITERTOOLS.PRODUCT <<<
-instead of writing loops inside loops
-Python gives us a ready function: product()
+
+### SOLUTION: ITERTOOLS.PRODUCT
+- instead of writing loops inside loops
+- Python gives us a ready function: product()
+
+```python
 import itertools
-syntax:
+```
+**? syntax:**
 itertools.product(iterable, repeat=n)
 iterable → characters
 repeat → number of loops (password length)
-example:
+
+**=> ex:**  
+```python
 for p in itertools.product("ab", repeat=2):
     print(p)
+```
 
-output:
+> output:
+> ('a','a'), ('a','b'), ('b','a'), ('b','b')
 
-('a','a'), ('a','b'), ('b','a'), ('b','b')
-NOTE:
+**# NOTE:**
 product() automatically does nested loops
->>> WHAT IS "p" <<<
-in each loop:
-p = ('a','b')
-it's a tuple, not a string
->>> PROBLEM: NEED STRING <<<
+
+### WHAT IS "p" 
+- in each loop:
+```python
+p = ('a','b') → it's a tuple, not a string
+```
+
+### PROBLEM: NEED STRING 
 we want: "ab"
 but we have: ('a','b')
-solution → join()
+**solution → join()**
