@@ -1,4 +1,4 @@
-## >>> PASSWORD COMBINATION LOGIC <<<
+## PASSWORD COMBINATION LOGIC 
 
 - step 1: choose characters  
 - step 2: choose password length  
@@ -7,7 +7,7 @@
 
 ---
 
-## >>> CHARACTER SET <<<
+### *** CHARACTER SET 
 
 ```python
 import string
@@ -15,42 +15,55 @@ import string
 string.ascii_lowercase
 string.ascii_uppercase
 string.digits
->>> BUILD CHARACTER SET <<<
+```
+---------
+
+### *** 1. BUILD CHARACTER SET 
+
+```python
+#                 a-z          +     0-9
 chars = string.ascii_lowercase + string.digits
+```
 
-example:
+### *** 2. PASSWORD LENGTH 
 
-a-z + 0-9
->>> PASSWORD LENGTH <<<
+```python
 length = 2
+```
 
-meaning:
+**meaning:**
+- password = 2 characters
 
-password = 2 characters
->>> GENERATE PASSWORDS <<<
+### *** 3. GENERATE PASSWORDS 
+
+```python
 import itertools
 
 for p in itertools.product(chars, repeat=length):
     password = ''.join(p)
     print(password)
->>> NUMBER OF COMBINATIONS <<<
+```
+--------------
 
-formula:
+### *** NUMBER OF COMBINATIONS 
 
-total = (len(chars)) ^ length
+*=> formula:*
+- total = (len(chars)) ^ length
 
-example:
+> ex:
 
-chars = 3
-length = 2
+> chars = 3
+> length = 2
 
-total = 3^2 = 9
->>> REAL-WORLD NOTE <<<
-increasing length increases combinations exponentially
+> total = 3^2 = 9
+------------------
 
-example:
+### *** REAL-WORLD NOTE 
+- increasing length increases combinations exponentially
 
-26 letters, length = 4
-26^4 = 456,976 attempts
-IMPORTANT:
-brute force becomes very slow with large length
+**=> ex:** 
+> 26 letters, length = 4
+> 26^4 = 456,976 attempts
+
+**!! IMPORTANT:**
+- brute force becomes very slow with large length
