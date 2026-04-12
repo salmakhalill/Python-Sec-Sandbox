@@ -17,9 +17,9 @@ examples:
 ```
 
 NOTE:
-zfill only adds zeros if length < required
-if already 4 digits → no change
-range(10000) → generates numbers from 0 to 9999
+- zfill only adds zeros if length < required
+- if already 4 digits → no change
+- range(10000) → generates numbers from 0 to 9999
 
 combining everything:
 
@@ -28,11 +28,11 @@ combining everything:
 ```
 
 meaning:
-loop through numbers from 0 → 9999
-convert each number to string
-make it 4 digits using zfill
-store all values in a list
+1. loop through numbers from 0 → 9999
+2. convert each number to string
+3. make it 4 digits using zfill
+4. store all values in a list
 
 IMPORTANT:
-used in brute force to generate fixed-length passwords
-ensures format like: 0001 instead of 1
+- used in brute force to generate fixed-length passwords
+- ensures format like: 0001 instead of 1
