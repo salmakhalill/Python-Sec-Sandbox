@@ -10,23 +10,27 @@ This repo is based on hands-on practice from the *Custom Tooling using Python* r
 
 
 .
-├── 01_bruteforce_tools/
-├── 02_vulnerability_scanners/
-├── 03_exploit_development/
-├── 04_task_automation/
+├── Bruteforce_tools/
+
+├── Vulnerability_scanners/
+
+├── Basic_Exploits/
+
+├── Task_Automation/
+
 └── notes/
 
 
 ---
 
-## 01 - Brute Force Tools
+## Brute Force Tools
 
 Basic scripts to understand how brute-force attacks work and how to generate password combinations.
 
 Includes:
-- Numeric brute force (0000–9999)
-- Alphanumeric brute force
-- Pattern-based brute force (e.g. 3 digits + 1 uppercase letter)
+- Numeric_bruteforce (0000–9999)
+- Alphanumeric_bruteforce
+- Pattern_bruteforce (e.g. 3 digits + 1 uppercase letter)
 
 Focus:
 - Password generation logic
@@ -35,7 +39,7 @@ Focus:
 
 ---
 
-## 02 - Vulnerability Scanners
+## Vulnerability Scanners
 
 Simple scripts to discover potential weaknesses in web applications.
 
@@ -45,7 +49,7 @@ Planned:
 
 ---
 
-## 03 - Exploit Development
+## Exploit Development
 
 Basic exploit scripts to understand how vulnerabilities are abused.
 
@@ -55,7 +59,7 @@ Planned:
 
 ---
 
-## 04 - Task Automation
+## Task Automation
 
 Scripts to automate repetitive tasks during testing.
 
