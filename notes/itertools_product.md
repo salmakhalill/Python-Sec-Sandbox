@@ -22,6 +22,8 @@ for a in "ab":
 **!! IMPORTANT:**
 - more length = more nested loops = messy code
 
+--------------------------------
+
 ### *** SOLUTION: ITERTOOLS.PRODUCT
 - instead of writing loops inside loops
 - Python gives us a ready function: product()
@@ -47,6 +49,7 @@ for p in itertools.product("ab", repeat=2):
 **# NOTE:**
 - product() automatically does nested loops
 
+--------------------------------
 
 ### *** WHAT IS "p" 
 - in each loop:
@@ -54,6 +57,7 @@ for p in itertools.product("ab", repeat=2):
 p = ('a','b') → it's a tuple, not a string
 ```
 
+--------------------------------
 
 ### *** PROBLEM: NEED STRING 
 - we want: "ab"
