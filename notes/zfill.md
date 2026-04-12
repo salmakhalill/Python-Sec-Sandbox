@@ -2,13 +2,12 @@
 
 - str(i) → converts number to string 
 
-example:  
+**#example:**  
 ```python
 i = 5
 str(i)  # "5"
 ```
-examples:
-
+**examples:**
 ```Python
 "5".zfill(4)    # "0005"
 "23".zfill(4)   # "0023"
@@ -16,23 +15,23 @@ examples:
 "9999".zfill(4) # "9999"
 ```
 
-NOTE:
+**NOTE:**
 - zfill only adds zeros if length < required
 - if already 4 digits → no change
 - range(10000) → generates numbers from 0 to 9999
 
-combining everything:
 
+**combining everything:**
 ```Python
 [str(i).zfill(4) for i in range(10000)]
 ```
 
-meaning:
+**meaning:**
 1. loop through numbers from 0 → 9999
 2. convert each number to string
 3. make it 4 digits using zfill
 4. store all values in a list
 
-IMPORTANT:
+**IMPORTANT:**
 - used in brute force to generate fixed-length passwords
 - ensures format like: 0001 instead of 1
