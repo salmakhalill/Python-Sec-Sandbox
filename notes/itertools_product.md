@@ -13,12 +13,14 @@ for a in "ab":
 > output:
 > aa, ab, ba, bb
 
+
 **# NOTE:**
 - this works for length = 2
 - but if length = 3 → we need 3 loops
 
+
 **!! IMPORTANT:**
-more length = more nested loops = messy code
+- more length = more nested loops = messy code
 
 ### SOLUTION: ITERTOOLS.PRODUCT
 - instead of writing loops inside loops
@@ -41,8 +43,10 @@ for p in itertools.product("ab", repeat=2):
 > output:
 > ('a','a'), ('a','b'), ('b','a'), ('b','b')
 
+
 **# NOTE:**
-product() automatically does nested loops
+- product() automatically does nested loops
+
 
 ### WHAT IS "p" 
 - in each loop:
@@ -50,7 +54,8 @@ product() automatically does nested loops
 p = ('a','b') → it's a tuple, not a string
 ```
 
+
 ### PROBLEM: NEED STRING 
-we want: "ab"
-but we have: ('a','b')
-**solution → join()**
+- we want: "ab"
+- but we have: ('a','b')
+- **solution → join()**
