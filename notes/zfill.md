@@ -2,19 +2,20 @@
 
 - str(i) → converts number to string 
 
-  example:  
+example:  
 ```python
 i = 5
 str(i)  # "5"
-zfill(4) → pads the string with zeros from the LEFT until length = 4
-
+```
 examples:
 
-Python
+```Python
 "5".zfill(4)    # "0005"
 "23".zfill(4)   # "0023"
 "456".zfill(4)  # "0456"
 "9999".zfill(4) # "9999"
+```
+
 NOTE:
 zfill only adds zeros if length < required
 if already 4 digits → no change
@@ -22,8 +23,10 @@ range(10000) → generates numbers from 0 to 9999
 
 combining everything:
 
-Python
+```Python
 [str(i).zfill(4) for i in range(10000)]
+```
+
 meaning:
 loop through numbers from 0 → 9999
 convert each number to string
