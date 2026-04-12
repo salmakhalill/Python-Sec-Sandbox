@@ -28,11 +28,8 @@ chars = string.ascii_lowercase + string.digits
 ### *** 2. PASSWORD LENGTH 
 
 ```python
-length = 2
+length = 2 → password = 2 characters
 ```
-
-**meaning:**
-- password = 2 characters
 
 ### *** 3. GENERATE PASSWORDS 
 
@@ -63,6 +60,7 @@ for p in itertools.product(chars, repeat=length):
 
 **=> ex:** 
 > 26 letters, length = 4
+
 > 26^4 = 456,976 attempts
 
 **!! IMPORTANT:**
