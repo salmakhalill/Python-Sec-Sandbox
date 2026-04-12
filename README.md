@@ -8,8 +8,6 @@ This repo is based on hands-on practice from the *Custom Tooling using Python* r
 
 ## Structure
 
-
-.
 ├── Bruteforce_tools/
 
 ├── Vulnerability_scanners/
