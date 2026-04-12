@@ -1,4 +1,4 @@
-## zfill EXPLANATION
+## zfill Explanation
 
 - zfill() → pads a string with zeros from the LEFT until it reaches a specific length
 - zfill() works on strings only, not numbers

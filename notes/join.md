@@ -1,8 +1,8 @@
-## JOIN EXPLAINED 
+## Join explained
 
 - join() merges elements into one string  
 
-### *** syntax:
+### *** Syntax:
 ```python
 "separator".join(iterable)
 ```
@@ -20,7 +20,7 @@
 
 ------------------
 
-### *** JOIN WITH PRODUCT
+### *** Join with product
 
 ```python
 import itertools

@@ -1,4 +1,4 @@
-## STRING LIBRARY 
+## String Library
 
 - Python has built-in module called string
 - provides useful constants for character sets
@@ -35,7 +35,7 @@ for c in string.ascii_lowercase:
 > z
 
 ------
-**!! IMPORTANT:**
+**!! Important:**
 - useful for working with character generation
 - often combined with loops in password / pattern generation
 

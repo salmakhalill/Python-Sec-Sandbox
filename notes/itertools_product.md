@@ -1,4 +1,4 @@
-## PROBLEM BEFORE ITERTOOLS 
+## Problem before itertools
 
 - suppose we want to generate all passwords of length 2  
 - using characters: "ab"  
@@ -14,26 +14,23 @@ for a in "ab":
 > aa, ab, ba, bb
 
 
-**# NOTE:**
-- this works for length = 2
-- but if length = 3 → we need 3 loops
-
-
-**!! IMPORTANT:**
-- more length = more nested loops = messy code
+**# Problem:**
+- this works for small lengths (e.g. 2)
+- longer lengths → more nested loops → messy and unscalable code
 
 --------------------------------
 
-### *** SOLUTION: ITERTOOLS.PRODUCT
-- instead of writing loops inside loops
-- Python gives us a ready function: product()
+### *** Solution: itertools.product
+- Python provides a built-in function to replace nested loops: `product()`
+- it automatically simulates nested loops internally
+- same result, but scalable and cleaner
 
 ```python
 import itertools
 ```
 **? syntax:**
 - itertools.product(iterable, repeat=n)
-- iterable → characters
+- iterable → characters set
 - repeat → number of loops (password length)
 
 **=> ex:**  
@@ -45,21 +42,17 @@ for p in itertools.product("ab", repeat=2):
 > output:
 > ('a','a'), ('a','b'), ('b','a'), ('b','b')
 
-
-**# NOTE:**
-- product() automatically does nested loops
-
 --------------------------------
 
-### *** WHAT IS "p" 
+### *** What is "p"?
 - in each loop:
 ```python
 p = ('a','b') → it's a tuple, not a string
 ```
 
---------------------------------
-
-### *** PROBLEM: NEED STRING 
+**# Problem:** need string
 - we want: "ab"
 - but we have: ('a','b')
-- **solution → join()**
+
+**# solution → join()**
+- convert tuple → string

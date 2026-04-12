@@ -1,4 +1,4 @@
-## PASSWORD COMBINATION LOGIC 
+## Password combination logic
 
 - step 1: choose characters  
 - step 2: choose password length  
@@ -7,7 +7,7 @@
 
 ---
 
-### *** CHARACTER SET 
+### *** Character set
 
 ```python
 import string
@@ -18,20 +18,20 @@ string.digits
 ```
 ---------
 
-### *** 1. BUILD CHARACTER SET 
+### *** 1. Build character set 
 
 ```python
 #                 a-z          +     0-9
 chars = string.ascii_lowercase + string.digits
 ```
 
-### *** 2. PASSWORD LENGTH 
+### ***2. Password length
 
 ```python
 length = 2 → password = 2 characters
 ```
 
-### *** 3. GENERATE PASSWORDS 
+### ***3. Generate passwords
 
 ```python
 import itertools
@@ -42,7 +42,7 @@ for p in itertools.product(chars, repeat=length):
 ```
 --------------
 
-### *** NUMBER OF COMBINATIONS 
+### *** Number of combinations
 
 *=> formula:*
 - total = (len(chars)) ^ length
@@ -55,7 +55,7 @@ for p in itertools.product(chars, repeat=length):
 > total = 3^2 = 9
 ------------------
 
-### *** REAL-WORLD NOTE 
+### *** Real-world note 
 - increasing length increases combinations exponentially
 
 **=> ex:** 
