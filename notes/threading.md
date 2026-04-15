@@ -22,20 +22,20 @@
 --------------
 ### *** Thread basics
 
-*** create thread
+**1. create thread
 ```python
 t = threading.Thread(target=scan_payload, args=(vuln, payload))
 ```
 - target → function to run
 - args → parameters
 
-*** start thread
+**2. start thread
 ```python
 t.start()
 ```
 - starts execution immediately
 
-*** join threads
+**3. join threads
 ```python
 for t in threads:
     t.join()
