@@ -20,7 +20,7 @@ re.search("word", text)
 - this is a word test
 
 *✘ does NOT match:*
-- hello world          # different word
+- hello world          → different word
 
 
 **# NOTE:**
