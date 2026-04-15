@@ -10,15 +10,11 @@
 | Threading  | Multiple requests run together    |
 
 ---
-### Sequential (Blocking)
-- Request 1 (running)
-- Request 2 (waiting)
-- Request 3 (waiting)
----
-### Threading (Parallel)
-- Request 1 (running)
-- Request 2 (running)
-- Request 3 (running)
+| Sequential (Blocking) | Threading (Parallel)   |
+|-----------------------|------------------------|
+| Request 1 (running)   | Request 1 (running)    |
+| Request 2 (waiting)   | Request 2 (running)    |
+| Request 3 (waiting)   | Request 3 (running)    |
 
 **# NOTE:**
 - Sequential = queue (one after another)
