@@ -11,14 +11,14 @@
 
 ---
 ### Sequential (Blocking)
-Request 1 (running)
-Request 2 (waiting)
-Request 3 (waiting)
+- Request 1 (running)
+- Request 2 (waiting)
+- Request 3 (waiting)
 ---
 ### Threading (Parallel)
-Request 1 (running)
-Request 2 (running)
-Request 3 (running)
+- Request 1 (running)
+- Request 2 (running)
+- Request 3 (running)
 
 **# NOTE:**
 - Sequential = queue (one after another)
@@ -85,13 +85,8 @@ with ThreadPoolExecutor(max_workers=10) as executor:
 ```
 **? Meaning:**
 - max_workers ⇢ number of active threads (only 10 threads run at the same time)
-- executor.map 
- ↪like loop:
+- executor.map → applies function to all items 
 
-```python
-for payload in payloads:
-    scan_payload(payload)
-```
 ⶆ BUT ↬ runs in parallel
 ---------------------
 ### *** ThreadPoolExecutor Concept
