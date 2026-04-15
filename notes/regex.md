@@ -15,6 +15,7 @@ re.search("word", text)
 - NOT required to be the whole string
 
 **=> ex:**
+
 *✓ matches:*
 - hello word here
 - word is found
