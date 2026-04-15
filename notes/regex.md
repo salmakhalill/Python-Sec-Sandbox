@@ -13,7 +13,8 @@ re.search("word", text)
 **? Meaning:**
 - searches for any text containing "word"
 - NOT required to be the whole string
-***Examples**
+
+**=> ex:**
 *✓ matches:*
 - hello word here
 - word is found
@@ -43,7 +44,7 @@ re.search(r"sql.*error", text, re.IGNORECASE)
 - error → must appear after
 > sql ... error
 
-***Examples**
+**=> ex:**
 *✓ matches:*
 - SQL syntax error
 - sql server internal error
@@ -83,7 +84,7 @@ re.search(pattern, text, re.IGNORECASE)
 **? Meaning:**
 - ignores uppercase/lowercase
 
-***Ex:**
+**=> ex:**
 ```python
 re.search("sql", "SQL ERROR")                 # ✘ no match
 re.search("sql", "SQL ERROR", re.IGNORECASE)  # ✓ match
