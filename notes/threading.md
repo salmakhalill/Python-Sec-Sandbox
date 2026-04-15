@@ -95,5 +95,7 @@ with ThreadPoolExecutor(max_workers=10) as executor:
 - Threads are reused until all tasks finish
 
 ⇨ No new threads are created
+
 ⇨ Tasks are distributed dynamically
+
 ⇨ This is controlled parallelism (not sequential, not full parallel)
