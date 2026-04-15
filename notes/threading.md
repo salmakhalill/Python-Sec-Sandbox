@@ -56,8 +56,7 @@ for payload in tests:
 ```
 **? Meaning:**
 - each payload → new thread
-**=> ex:**
-- 1000 payloads → 1000 threads 𖠋
+> 1000 payloads → 1000 threads 𖠋
 
 **𖤾 problems:**
 - high CPU usage
