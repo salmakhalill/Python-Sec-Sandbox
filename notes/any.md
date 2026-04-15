@@ -26,8 +26,8 @@ return False
 - any() = OR logic
 - all() = AND logic
 --------------------------------------------
-## Generator Expression (Short for loop)
-- used to write loops in one line
+## Generator Expression (Short for loop) → used to write loops in one line
+
 *** normal loop
 ```python
 result = []
