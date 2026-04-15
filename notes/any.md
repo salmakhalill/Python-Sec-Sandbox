@@ -1,7 +1,9 @@
 ## any() Explained
 - any() → returns True if at least ONE element is True
-*** syntax
+- *** syntax
+```python
 any(condition for item in list)
+```
 *** example
 ```python
 words = ["cat", "dog", "bird"]
