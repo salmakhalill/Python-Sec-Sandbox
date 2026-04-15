@@ -14,8 +14,6 @@ re.search("word", text)
 - searches for any text containing "word"
 - NOT required to be the whole string
 
-**=> ex:**
-
 *✓ matches:*
 - hello word here
 - word is found
@@ -23,6 +21,7 @@ re.search("word", text)
 
 *✘ does NOT match:*
 - hello world   # different word
+
 
 **# NOTE:**
 - search = looks for substring (part of text)
@@ -45,7 +44,6 @@ re.search(r"sql.*error", text, re.IGNORECASE)
 - error → must appear after
 > sql ... error
 
-**=> ex:**
 *✓ matches:*
 - SQL syntax error
 - sql server internal error
@@ -54,6 +52,7 @@ re.search(r"sql.*error", text, re.IGNORECASE)
 *✘ does NOT match:*
 - SQL query executed
 - sql connection success
+
 
 **# NOTE:**
 - regex does NOT guess
