@@ -4,6 +4,8 @@
 
 **Anonymous crime reporting platform with authority dashboard**
 
+<br/>
+
 ![Django](https://img.shields.io/badge/Django-5.2-092E20?style=flat-square&logo=django&logoColor=white)
 ![DRF](https://img.shields.io/badge/DRF-3.x-ff1709?style=flat-square&logo=django&logoColor=white)
 ![JWT](https://img.shields.io/badge/Auth-JWT-black?style=flat-square&logo=jsonwebtokens&logoColor=white)
@@ -15,82 +17,117 @@
 
 <br/>
 
-🏆 **Digitopia 2025** — National ICT Competition, Ministry of Communications, Egypt  
-Qualified to **Phase 3 of 4** in the Cybersecurity & AI track
+🏆 **Digitopia 2025** — National ICT Competition under Egypt's Ministry of Communications  
+Reached **Phase 3 of 4** in the Cybersecurity & AI track
+
+<br/>
+
+**Live API →** `https://salmakhalill.pythonanywhere.com`
 
 </div>
 
 ---
 
-## Overview
+## About
 
-Most people who witness a crime don't report it — fear of being identified is the main reason. SecureReport is built around that reality: anyone can file a report anonymously, attach evidence, and track their case status without creating an account.
+Most people who witness a crime don't report it — fear of being identified is the main reason.
 
-On the other side, the authority receiving those reports gets a full dashboard to manage cases, update statuses, and monitor trends.
+SecureReport lets anyone file a report completely anonymously, attach evidence, and track their case through a status timeline. No account needed. On the other side, the authority receiving reports gets a full dashboard to manage cases, update statuses, and monitor trends.
 
-This repo is the Django backend. The two React frontends were built by a teammate — my work was the API, database, analytics, and deployment, and making sure everything connected properly with the frontend.
-
-**Live API:** `https://salmakhalill.pythonanywhere.com`
-
----
-
-## What It Does
-
-**Public portal**
-- Submit a report anonymously — no registration, no identity
-- Attach audio recordings, images, or documents
-- Get a tracking code and follow your case through a status timeline
-
-**Authority dashboard**
-- JWT login with three roles: Admin, Employee, Viewer
-- KPI cards with trend indicators — total, new, under review, critical
-- Analytics charts — daily / weekly / monthly, filterable by year
-- Geographic heatmap, report management, archive
-- User management with welcome emails via SendGrid
-
-**AI severity classifier** *(local only)*
-- Arabic BERT model predicts severity: حرج / عالية / متوسطة / منخفضة
-- Works locally but not deployed — model size doesn't fit PythonAnywhere's free tier
+> **This repo is the Django backend.**
+> The two React frontends were built by a teammate. My role was the API, database design, analytics module, and deployment — plus the integration work to connect everything with the frontend.
 
 ---
 
 ## Screenshots
 
-### Tracking timeline — public portal
-![Tracking Timeline](docs/screenshots/tracking-timeline.png)
+| Public portal — status timeline | Authority dashboard |
+|---|---|
+| ![Tracking](docs/screenshots/tracking-timeline.png) | ![Dashboard](docs/screenshots/dashboard-analytics.png) |
 
-### Analytics — authority dashboard
-![Dashboard](docs/screenshots/dashboard-analytics.png)
+<div align="center">
 
-### Welcome email
-![Welcome Email](docs/screenshots/welcome-email.png)
+![Welcome Email](docs/screenshots/welcome-email.png)  
+*Welcome email sent via SendGrid when a new staff account is created*
+
+</div>
+
+---
+
+## Features
+
+<details>
+<summary><b>Public Portal</b></summary>
+
+<br/>
+
+- Anonymous submission — no registration, no identity required
+- 5 report types: Assault · Blackmail · Harassment · Theft · Altercation
+- Location with map link and GPS coordinates
+- Attach audio recordings, images, or documents
+- Auto-generated 12-character tracking code per report
+- Visual status timeline — see exactly where the case stands
+
+</details>
+
+<details>
+<summary><b>Authority Dashboard</b></summary>
+
+<br/>
+
+- JWT-secured login with role-based access — Admin, Employee, Viewer
+- KPI cards with trend indicators: total, new, under review, critical reports
+- Analytics charts filterable by year — daily / weekly / monthly toggle
+- Geographic heatmap of incidents
+- Reports table — update status, manage active cases
+- Archive — cases auto-move here when solved or closed
+- User management: create accounts, assign roles, send welcome emails
+- Password reset via SendGrid
+
+</details>
+
+<details>
+<summary><b>AI Severity Classifier</b> <i>(local only)</i></summary>
+
+<br/>
+
+Fine-tuned Arabic BERT model that predicts report severity at submission time:  
+**حرج / عالية / متوسطة / منخفضة**
+
+Not deployed — model size exceeds PythonAnywhere limits. The `severity` field stays on the model and can be set manually by staff, or populated via the backfill script in `reports/ml_model.py`.
+
+</details>
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────┐   ┌─────────────────────┐
-│  Public Portal      │   │  Authority Dashboard │
-│  React              │   │  React               │
-└──────────┬──────────┘   └──────────┬───────────┘
-           └─────────────┬───────────┘
-                         │  REST API + JWT
-               ┌─────────▼──────────┐
-               │   Django Backend   │
-               │  accounts          │
-               │  reports           │
-               │  analytics         │
-               └─────────┬──────────┘
-                    SQLite + Media files + SendGrid
+┌─────────────────────┐     ┌──────────────────────┐
+│   Public Portal     │     │  Authority Dashboard  │
+│   React             │     │  React                │
+└──────────┬──────────┘     └──────────┬────────────┘
+           └──────────────┬────────────┘
+                          │  REST API · CORS · JWT
+                ┌─────────▼───────────┐
+                │    Django Backend   │
+                │                     │
+                │  accounts/          │
+                │  reports/           │
+                │  analytics/         │
+                └─────────┬───────────┘
+                          │
+              ┌───────────┴────────────┐
+              │        SQLite          │
+              └────────────────────────┘
+              Media files · SendGrid
 ```
 
-The backend is three apps with clear responsibilities: `accounts` handles identity and auth, `reports` is the core domain, `analytics` is a read-only layer that only aggregates data and never writes.
+**A few decisions worth knowing about** — full context in [`docs/architecture.md`](docs/architecture.md):
 
-A few decisions worth noting — they're in [`docs/architecture.md`](docs/architecture.md) with more context:
-- SQLite in production because PythonAnywhere's free tier doesn't support external DB connections
-- Pandas for analytics instead of ORM aggregations — the KPI formulas came from Power BI specs and translated cleanly into DataFrame operations
-- AI classifier commented out in production, not deleted — the field stays on the model and staff can set severity manually
+- **SQLite in production** — PythonAnywhere's free tier doesn't support external DB connections. Settings include the PostgreSQL config commented out for when that changes.
+- **Pandas for analytics** — the KPI formulas came from Power BI specs provided by the data analyst teammate and translated naturally into DataFrame operations.
+- **AI classifier is commented out, not removed** — the field stays on the model, staff can set severity manually in the meantime.
 
 ---
 
@@ -98,8 +135,8 @@ A few decisions worth noting — they're in [`docs/architecture.md`](docs/archit
 
 | | |
 |---|---|
-| Framework | Django 5.2 · Django REST Framework |
-| Auth | SimpleJWT — access 1h, refresh 7d |
+| Framework | Django 5.2 + Django REST Framework |
+| Auth | SimpleJWT — access 1h · refresh 7d |
 | Database | SQLite |
 | Analytics | Pandas · NumPy |
 | AI | HuggingFace Transformers — Arabic BERT (local) |
@@ -113,9 +150,9 @@ A few decisions worth noting — they're in [`docs/architecture.md`](docs/archit
 
 ```
 ├── config/           → settings, root URLs
-├── accounts/         → users, roles, JWT, password reset, SendGrid
-├── reports/          → Report, CriminalInfo, Attachment models + API
-├── analytics/        → KPI computation and chart endpoints
+├── accounts/         → users, roles, JWT auth, password reset, SendGrid
+├── reports/          → Report · CriminalInfo · Attachment models + API
+├── analytics/        → KPI computation, chart endpoints
 └── media/            → uploaded files (audio, docs, images)
 ```
 
@@ -123,21 +160,54 @@ A few decisions worth noting — they're in [`docs/architecture.md`](docs/archit
 
 ## API
 
-| App | Key endpoints |
-|---|---|
-| reports | `POST /api/reports/` · `GET /api/reports/track/<code>/` · `PATCH /api/reports/<id>/` · `GET /api/reports/archive/` |
-| analytics | `GET /analytics/recent/` · `GET /analytics/stats/` · `GET /analytics/site_stats/` |
-| accounts | `POST /auth/login/` · `POST /auth/password_reset/` · `GET /account/` · `GET /users/` |
+<details>
+<summary>Reports</summary>
 
-Full request/response docs: [`docs/api/`](docs/api/)
+| Method | Endpoint | Auth |
+|---|---|---|
+| `POST` | `/api/reports/` | Public |
+| `GET` | `/api/reports/` | Required |
+| `GET` | `/api/reports/track/<code>/` | Public |
+| `GET` | `/api/reports/archive/` | Required |
+| `PATCH` | `/api/reports/<id>/` | Admin · Employee |
+| `DELETE` | `/api/reports/<id>/` | Admin · Employee |
+
+</details>
+
+<details>
+<summary>Analytics</summary>
+
+| Method | Endpoint | Auth |
+|---|---|---|
+| `GET` | `/analytics/stats/` | Required |
+| `GET` | `/analytics/recent/` | Required |
+| `GET` | `/analytics/site_stats/` | Public |
+
+</details>
+
+<details>
+<summary>Accounts</summary>
+
+| Method | Endpoint | Auth |
+|---|---|---|
+| `POST` | `/auth/login/` | Public |
+| `POST` | `/auth/refresh/` | Public |
+| `POST` | `/auth/password_reset/` | Public |
+| `POST` | `/auth/password_reset_confirm/<uid>/<token>/` | Public |
+| `GET · PATCH` | `/account/` | Active user |
+| `GET · POST · PATCH · DELETE` | `/users/` | Admin only |
+
+</details>
+
+→ Full request/response examples: [`docs/api/`](docs/api/)
 
 ---
 
 ## Report Lifecycle
 
 ```
-Submitted → Received → Under Review → In Progress → Solved  → Archive
-                                                  → Closed  → Archive
+Submitted → Received → Under Review → In Progress ┬→ Solved ─→ Archive
+                                                   └→ Closed ─→ Archive
 ```
 
 ---
@@ -147,26 +217,26 @@ Submitted → Received → Under Review → In Progress → Solved  → Archive
 ```bash
 git clone https://github.com/salmakhalill/SecureReport_django.git
 cd SecureReport_django
+
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env
-python manage.py migrate && python manage.py createsuperuser
+
+cp .env.example .env   # SECRET_KEY · DEBUG · SENDGRID_API_KEY · DEFAULT_FROM_EMAIL
+
+python manage.py migrate
+python manage.py createsuperuser
 python manage.py runserver
 ```
 
-`.env` needs: `SECRET_KEY`, `DEBUG`, `SENDGRID_API_KEY`, `DEFAULT_FROM_EMAIL`
-
-Full setup + AI classifier instructions: [`docs/setup.md`](docs/setup.md)
+→ Full setup guide + AI classifier instructions: [`docs/setup.md`](docs/setup.md)
 
 ---
 
-## Docs
+## Documentation
 
-| File | |
+| | |
 |---|---|
-| [`docs/api/reports.md`](docs/api/reports.md) | Reports API — request/response examples |
-| [`docs/api/analytics.md`](docs/api/analytics.md) | Analytics API — KPI shapes, period filter |
-| [`docs/api/accounts.md`](docs/api/accounts.md) | Auth, user management, password reset |
+| [`docs/api/`](docs/api/) | Endpoint reference — request/response examples for all three apps |
 | [`docs/database/erd.md`](docs/database/erd.md) | Entity relationship diagram |
 | [`docs/database/data-dictionary.md`](docs/database/data-dictionary.md) | Field reference for all models |
 | [`docs/architecture.md`](docs/architecture.md) | Technical decisions and trade-offs |
