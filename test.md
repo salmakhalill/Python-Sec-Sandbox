@@ -20,38 +20,43 @@ analytics/  how it's aggregated — reads only, never writes
 The following diagram showcases how the frontends, the Django core apps, the database, and the external services interact structurally as isolated components:
 
 ```mermaid
-graph LR
-    subgraph Frontends
-        P["Public Portal"]
-        D["Authority Dashboard"]
-    end
+flowchart TD
+    %% Frontends
+    P["Public Portal"]
+    D["Authority Dashboard"]
 
-    subgraph Backend["Django Backend"]
+    %% Backend
+    subgraph B["Django Backend"]
+        AC["accounts app"]
         R["reports app"]
         AN["analytics app"]
-        AC["accounts app"]
-        ML["Arabic BERT Model<br/>(local only)"]
     end
 
-    subgraph Infrastructure
-        DB[("SQLite / PostgreSQL")]
-        MED["Media Storage"]
-        SG["SendGrid"]
-    end
+    %% Services
+    DB[("SQLite / PostgreSQL")]
+    SG["SendGrid"]
+    ML["Arabic BERT Model<br/>(local only)"]
+    MED["Media Storage"]
 
+    %% Frontend flows
     P -->|"submit · track"| R
+
+    D -->|"auth"| AC
     D -->|"reports"| R
     D -->|"analytics"| AN
-    D -->|"auth"| AC
+
+    %% Internal dependency
+    AN -.->|"imports models"| R
+
+    %% Infrastructure
+    AC --> DB
+    AC --> SG
 
     R --> DB
     R --> MED
     R -.->|"predict severity"| ML
 
-    AN --> DB
-
-    AC --> DB
-    AC --> SG
+    AN -.->|"read only"| DB
 ```
 ---
 ## Core Domain Models
