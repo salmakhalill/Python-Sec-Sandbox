@@ -1,123 +1,83 @@
-# Accounts API
+# Reports API
 
-`Base URL: https://salmakhalill.pythonanywhere.com`
-
----
-
-### `POST /auth/login/`
-
-```json
-{ "email": "admin@securereport.com", "password": "..." }
-```
-
-Returns JWT tokens and user info. The `role`, `email`, and `status` are included in the response so the frontend can gate UI elements immediately — no separate `/me/` call needed.
-
-**Response `200`:**
-```json
-{
-  "access": "eyJ...",
-  "refresh": "eyJ...",
-  "role": "Admin",
-  "email": "admin@securereport.com",
-  "status": "active"
-}
-```
-
-**Response `401`:**
-```json
-{
-  "detail": "No active account found with the given credentials"
-}
-```
+`Base URL: https://salmakhalill.pythonanywhere.com/api`
 
 ---
 
-### `POST /auth/refresh/`
-
-```json
-{ "refresh": "eyJ..." }
-```
-
-Returns a new `access` token. Access tokens expire in 1 hour, refresh tokens in 7 days.
-
----
-
-### Password reset
+### `POST /reports/` — submit a report
 
 ```mermaid
 sequenceDiagram
-    actor User
-    participant Dashboard
-    participant API
+    actor Citizen
+    participant Portal as Public Portal
+    participant API as Django API
     participant DB
-    participant SG as SendGrid
+    participant AI as BERT Model
 
-    User->>Dashboard: enters email
-    Dashboard->>API: POST /auth/password_reset/
-    API->>DB: find user by email
-    API->>API: generate uid + token
-    API->>SG: send reset email
-    SG-->>User: email with link
-
-    User->>Dashboard: clicks link, enters new password
-    Dashboard->>API: POST /auth/password_reset_confirm/{uid}/{token}/
-    API->>API: validate token
-    API->>DB: update password hash
-    API-->>Dashboard: { success: true }
+    Citizen->>Portal: fills form + uploads files
+    Portal->>API: POST /api/reports/ (multipart/form-data)
+    API->>API: sanitize inputs with bleach
+    API->>DB: create Report (tracking_code auto-generated)
+    API->>AI: predict_severity(report_details)
+    Note over AI: local only — disabled in production
+    AI-->>API: severity label
+    API->>DB: save severity + CriminalInfo + Attachments
+    DB-->>API: Report saved
+    API-->>Portal: { tracking_code }
+    Portal-->>Citizen: show tracking code
 ```
 
-Two steps:
+Public. No authentication required. Accepts `multipart/form-data` because the request carries file uploads.
 
-**1. Request the email**  
-`POST /auth/password_reset/` → `{ "email": "..." }`
+**Fields:**
 
-Always returns `200` even if the email doesn't exist — prevents user enumeration.`
+| Field | Required | Notes |
+|---|---|---|
+| `location` | yes | Human-readable location name |
+| `incident_date` | yes | `YYYY-MM-DD` |
+| `report_details` | yes | Sanitized with bleach before saving |
+| `report_type` | yes | `اعتداء` · `ابتزاز` · `تحرش` · `سرقة` · `مشادة` |
+| `location_link` | no | Any map URL |
+| `latitude` / `longitude` | no | GPS coordinates |
+| `contact_info` | no | Optional — reporter's choice |
+| `criminal_infos` | no | JSON string (see below) |
+| `attachments` | no | Audio: `.mp3 .wav .webm .ogg` — everything else → files |
 
-**Response `200`**
+`criminal_infos` is sent as a JSON string inside the form field:
+```json
+[{ "name": "...", "description": "...", "other_info": "..." }]
+```
+
+**Response `201`:**
 ```json
 {
-  "message": "If email exists, reset link sent"
+  "id": 42,
+  "tracking_code": "A1B2C3D4E5F6",
+  "status": "تم استلام البلاغ",
+  "location": "القاهرة، شارع التحرير",
+  "latitude": "30.044420000000000",
+  "longitude": "31.235710000000000",
+  "location_link": "https://maps.google.com/?q=...",
+  "report_type": "تحرش",
+  "incident_date": "2025-08-10",
+  "report_details": "...",
+  "contact_info": null,
+  "severity": null,
+  "criminal_infos": [{ "name": "...", "description": "...", "other_info": null }],
+  "attachments": [{ "type": "audio", "url": "https://.../media/attachments/audio/rec.webm" }],
+  "created_at": "2025-08-10T14:32:00Z"
 }
 ```
 
-**2. Set the new password**  
-`POST /auth/password_reset_confirm/<uidb64>/<token>/`
-
-^ Set a new password using the link from the reset email.
-
-**Request:**
-```json
-{ "new_password": "...", "confirm_password": "..." }
-```
-The token is single-use and tied to the user's current password hash, so it invalidates automatically after the password changes. Returns `400` if expired or already used.
-
-**Response `200`:**
-```json
-{
-  "success": true,
-  "message": "Password updated successfully"
-}
-```
-
-**Response `400` — passwords don't match:**
-```json
-{
-  "confirm_password": ["Passwords do not match"]
-}
-```
-
-**Response `400` — invalid or expired link:**
-```json
-{
-  "message": "Invalid or expired token"
-}
-```
+`severity` is null on creation. It can later be set manually by staff or populated by the local AI classifier.
 
 ---
 
-### `GET · PATCH /account/`
+### `GET /reports/` — list active reports
 
-View or update the currently logged-in user's profile.
+Requires authentication. Excludes `تم الحل` and `تم الإغلاق` — those are in the archive.
+
+Admins and Employees receive full detail. Viewers receive limited fields only.
 
 **Headers:**
 ```http
@@ -126,98 +86,124 @@ Authorization: Bearer <access_token>
 
 **Response `200`:**
 ```json
-{
-  "email": "...",
-  "full_name": "...",
-  "role": "Admin",
-  "status": "active"
-}
+[
+  {
+    "id": 42,
+    "tracking_code": "A1B2C3D4E5F6",
+    "status": "قيد المراجعة",
+    "location": "القاهرة، شارع التحرير",
+    "report_type": "تحرش",
+    "incident_date": "2025-08-10",
+    "report_details": "...",
+    "severity": "عالية",
+    "criminal_infos": [...],
+    "attachments": [...],
+    "created_at": "2025-08-10T14:32:00Z"
+  }
+]
 ```
 
-**Request (profile update):**
-```json
-{
-  "full_name": "اسم جديد"
-}
-```
-To change password, include both `current_password` and `new_password`. The endpoint verifies the current password before proceeding.
-
-**Request (password change):**
-```json
-{
-  "current_password": "OldPass123!",
-  "new_password": "NewStr0ngPass!"
-}
-```
-
-**Response `400` — wrong current password:**
-```json
-{
-  "detail": "Current password is incorrect"
-}
-```
-
----
-### User management — Admin only
-
-**`GET /users/`** — list all staff accounts.
-
-**Response `200`:**
+Viewer response:
 ```json
 [
   {
-    "id": 1,
-    "email": "...",
-    "full_name": "...",
-    "role": "Admin",
-    "status": "active",
-    "date_joined": "2025-08-01T10:00:00Z"
-  },
-  {
-    "id": 2,
-    "email": "...",
-    "full_name": "...",
-    "role": "Employee",
-    "status": "active",
-    "date_joined": "2025-08-05T09:00:00Z"
+    "id": 42,
+    "tracking_code": "A1B2C3D4E5F6",
+    "status": "قيد المراجعة",
+    "report_type": "تحرش",
+    "created_at": "2025-08-10T14:32:00Z"
   }
 ]
 ```
 
 ---
 
-**`POST /users/`** — create a new user.  
+### `GET /reports/track/<tracking_code>/` — track a report
 
-**Request:**
+```mermaid
+sequenceDiagram
+    actor Citizen
+    participant Portal as Public Portal
+    participant API
+    participant DB
+
+    Citizen->>Portal: enters tracking code
+    Portal->>API: GET /api/reports/track/{code}/
+    API->>DB: lookup by tracking_code
+    DB-->>API: {status, report_type, created_at}
+    API-->>Portal: report data
+    Portal-->>Citizen: Visual status timeline showing current stage
+```
+
+Public. Returns minimal fields — enough to drive the status timeline on the public portal.
+
+**Response `200`:**
 ```json
 {
-  "email": "...",
-  "full_name": "...",
-  "role": "Employee"
+  "id": 42,
+  "tracking_code": "A1B2C3D4E5F6",
+  "status": "قيد المعالجة",
+  "report_type": "تحرش",
+  "created_at": "2025-08-10T14:32:00Z"
 }
 ```
-No password needed in the request.
 
-A welcome email is sent with a password setup link.
-
-
-**Response `201`:** New user object (same shape as GET).
+Returns `404` if the code doesn't exist.
 
 ---
 
-**`PATCH /users/<id>/`** — update role or status. Setting `status: Inactive` blocks access without deleting the account.
+### `GET /reports/archive/`
 
-**Example:**
-```json
-{
-  "status": "Inactive"
-}
-```
+Requires authentication.
 
-**Response `200`:** Updated user object.
+Returns only reports with status `تم الحل` or `تم الإغلاق`.
+
+Same role-based field restrictions as the list endpoint.
 
 ---
 
-**`DELETE /users/<id>/`** — Delete a user.
+### `PATCH /reports/<id>/` — update a report
+
+Admin and Employee only. Partial update — send any subset of fields.
+
+**Headers:**
+```http
+Authorization: Bearer <access_token>
+```
+
+**Example request body:**
+```json
+{
+  "status": "قيد المراجعة",
+  "severity": "حرج"
+}
+```
+
+**Response `200`:** Updated report object.
+
+**Response `403`:**
+```json
+{
+  "detail": "Permission denied."
+}
+```
+
+---
+
+### `DELETE /reports/<id>/`
+
+Admin and Employee only.
+
+**Headers:**
+```http
+Authorization: Bearer <access_token>
+```
 
 **Response `204`:** No content.
+
+**Response `403`:**
+```json
+{
+  "detail": "Permission denied."
+}
+```
