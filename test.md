@@ -66,7 +66,8 @@ graph TD
     %% Service connections
     Accounts -->|Trigger Welcome/Reset Token Emails| SG
     Reports -->|Predict Severity via Local Script| AI
-
+```
+---
 ## Core Domain Models
 The following class diagram illustrates the primary entities and their relationships across the apps:
 
@@ -108,6 +109,8 @@ classDiagram
     Report "1" --> "0..*" CriminalInfo
     Report "1" --> "0..*" Attachment
     CustomUser --> Report : manages
+```
+---
 
 ## DRF over FastAPI
 
