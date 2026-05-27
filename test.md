@@ -1,48 +1,34 @@
 # Reports API
 
-Base URL: `https://salmakhalill.pythonanywhere.com/api`
+`Base URL: https://salmakhalill.pythonanywhere.com/api`
 
 ---
 
-## POST `/reports/`
+### `POST /reports/` — submit a report
 
-Submit an anonymous report.
+Public. No authentication required. Accepts `multipart/form-data` because the request carries file uploads.
 
-Public endpoint — no authentication required.
+**Fields:**
 
-**Content-Type:** `multipart/form-data`  
-Reports may include audio recordings, documents, or images.
+| Field | Required | Notes |
+|---|---|---|
+| `location` | yes | Human-readable location name |
+| `incident_date` | yes | `YYYY-MM-DD` |
+| `report_details` | yes | Sanitized with bleach before saving |
+| `report_type` | yes | `اعتداء` · `ابتزاز` · `تحرش` · `سرقة` · `مشادة` |
+| `location_link` | no | Any map URL |
+| `latitude` / `longitude` | no | GPS coordinates |
+| `contact_info` | no | Optional — reporter's choice |
+| `criminal_infos` | no | JSON string (see below) |
+| `attachments` | no | Audio: `.mp3 .wav .webm .ogg` — everything else → files |
 
-### Request Fields
-
-| Field | Type | Required | Notes |
-|---|---|---|---|
-| `location` | string | yes | Human-readable location |
-| `location_link` | string | no | Any map URL |
-| `latitude` | decimal | no | GPS latitude |
-| `longitude` | decimal | no | GPS longitude |
-| `incident_date` | date | yes | Format: `YYYY-MM-DD` |
-| `report_details` | string | yes | Sanitized with `bleach` before saving |
-| `contact_info` | string | no | Optional — reporter's choice |
-| `report_type` | string | yes | `اعتداء` · `ابتزاز` · `تحرش` · `سرقة` · `مشادة` |
-| `criminal_infos` | JSON string | no | Array of criminal objects |
-| `attachments` | file(s) | no | Audio: `.mp3 .wav .webm .ogg` |
-
-All non-audio uploads are treated as generic files.
-
-### `criminal_infos` Format
-
-Sent as a JSON string inside the form field:
-
+`criminal_infos` is sent as a JSON string inside the form field:
 ```json
-[
-  {
-    "name": "اسم المشتبه به",
-    "description": "وصف مختصر",
-    "other_info": "معلومات إضافية"
-  }
-]
-Response 201
+[{ "name": "...", "description": "...", "other_info": "..." }]
+```
+
+**Response `201`:**
+```json
 {
   "id": 42,
   "tracking_code": "A1B2C3D4E5F6",
@@ -53,42 +39,32 @@ Response 201
   "location_link": "https://maps.google.com/?q=...",
   "report_type": "تحرش",
   "incident_date": "2025-08-10",
-  "report_details": "تفاصيل الحادثة...",
+  "report_details": "...",
   "contact_info": null,
   "severity": null,
-  "criminal_infos": [
-    {
-      "name": "اسم المشتبه به",
-      "description": "وصف مختصر",
-      "other_info": null
-    }
-  ],
-  "attachments": [
-    {
-      "type": "audio",
-      "url": "https://salmakhalill.pythonanywhere.com/media/attachments/audio/recording.webm"
-    }
-  ],
+  "criminal_infos": [{ "name": "...", "description": "...", "other_info": null }],
+  "attachments": [{ "type": "audio", "url": "https://.../media/attachments/audio/rec.webm" }],
   "created_at": "2025-08-10T14:32:00Z"
 }
+```
 
-severity is null on creation — populated later by the local AI classifier or manually by staff.
+`severity` is null on creation — set by the AI classifier locally or manually by staff.
 
-GET /reports/
+---
 
-List active reports.
+### `GET /reports/` — list active reports
 
-Requires authentication.
+Requires authentication. Excludes `تم الحل` and `تم الإغلاق` — those are in the archive.
 
-Reports with status تم الحل and تم الإغلاق are excluded from this endpoint and served from /reports/archive/.
+Admins and Employees receive full detail. Viewers receive limited fields only.
 
-Headers
+**Headers:**
+```
 Authorization: Bearer <access_token>
-Role-Based Response Behavior
-Admin / Employee → receive the full report object
-Viewer → limited fields only:
-id · tracking_code · status · report_type · created_at
-Response 200 — Admin / Employee
+```
+
+**Response `200`:**
+```json
 [
   {
     "id": 42,
@@ -104,7 +80,10 @@ Response 200 — Admin / Employee
     "created_at": "2025-08-10T14:32:00Z"
   }
 ]
-Response 200 — Viewer
+```
+
+Viewer response (limited fields):
+```json
 [
   {
     "id": 42,
@@ -114,24 +93,16 @@ Response 200 — Viewer
     "created_at": "2025-08-10T14:32:00Z"
   }
 ]
-Response 403
-{
-  "detail": "Permission denied."
-}
+```
 
-Inactive users receive empty responses regardless of role.
+---
 
-GET /reports/track/<tracking_code>/
+### `GET /reports/track/<tracking_code>/` — track a report
 
-Track a report using its public tracking code.
+Public. Returns minimal fields — enough to drive the status timeline on the public portal.
 
-Public endpoint — no authentication required.
-
-Returns minimal fields required for the public status timeline.
-
-Example
-GET /reports/track/A1B2C3D4E5F6/
-Response 200
+**Response `200`:**
+```json
 {
   "id": 42,
   "tracking_code": "A1B2C3D4E5F6",
@@ -139,62 +110,64 @@ Response 200
   "report_type": "تحرش",
   "created_at": "2025-08-10T14:32:00Z"
 }
-Response 404
-{
-  "detail": "Not found."
-}
-GET /reports/archive/
+```
 
-List archived reports.
+Returns `404` if the code doesn't exist.
+
+---
+
+### `GET /reports/archive/`
 
 Requires authentication.
 
-Only reports with status:
+Returns only reports with status `تم الحل` or `تم الإغلاق`.
 
-تم الحل
-تم الإغلاق
+Same role-based field restrictions as the list endpoint.
 
-Same role-based field restrictions as GET /reports/.
+---
 
-Headers
+### `PATCH /reports/<id>/` — update a report
+
+Admin and Employee only. Partial update — send any subset of fields.
+
+**Headers:**
+```
 Authorization: Bearer <access_token>
-PATCH /reports/<id>/
+```
 
-Partially update a report.
-
-Admin and Employee only.
-
-Headers
-Authorization: Bearer <access_token>
-Request Body
-
-Any subset of fields may be sent.
-
+**Partial update — send any subset of fields:**
+```json
 {
   "status": "قيد المراجعة",
   "severity": "حرج"
 }
-Response 200
+```
 
-Returns the updated report object.
+**Response `200`:** Updated report object.
 
-Response 403
+**Response `403`:**
+```json
 {
   "detail": "Permission denied."
 }
-DELETE /reports/<id>/
+```
 
-Delete a report.
+---
+
+### `DELETE /reports/<id>/`
 
 Admin and Employee only.
 
-Headers
+**Headers:**
+```
 Authorization: Bearer <access_token>
-Response 204
+```
 
-No content.
+**Response `204`:** No content.
 
-Response 403
+**Response `403`:**
+```json
 {
   "detail": "Permission denied."
 }
+```
