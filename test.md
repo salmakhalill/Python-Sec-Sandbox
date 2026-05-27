@@ -20,45 +20,38 @@ analytics/  how it's aggregated — reads only, never writes
 The following diagram showcases how the frontends, the Django core apps, the database, and the external services interact structurally as isolated components:
 
 ```mermaid
-flowchart TD
-    %% Modern Premium Styling
-    classDef frontend fill:#f8fafc,stroke:#cbd5e1,stroke-width:1px,color:#333,rx:8px,ry:8px;
-    classDef backend fill:#eff6ff,stroke:#93c5fd,stroke-width:2px,color:#1e40af,rx:8px,ry:8px;
-    classDef storage fill:#f0fdf4,stroke:#86efac,stroke-width:2px,color:#166534,rx:8px,ry:8px;
-    classDef service fill:#fff7ed,stroke:#fdba74,stroke-width:2px,color:#9a3412,rx:8px,ry:8px;
+graph LR
+    subgraph Frontends
+        P["Public Portal"]
+        D["Authority Dashboard"]
+    end
 
-    %% Client Layer (Top)
-    Dashboard("🖥️ Authority Dashboard"):::frontend
-    Portal("🌐 Public Portal"):::frontend
+    subgraph Backend["Django Backend"]
+        R["reports app"]
+        AN["analytics app"]
+        AC["accounts app"]
+        ML["Arabic BERT Model<br/>(local only)"]
+    end
 
-    %% Django Apps Layer (Middle)
-    Accounts["🔐 accounts app<br/>(Auth & Roles)"]:::backend
-    Analytics["📊 analytics app<br/>(Pandas KPIs)"]:::backend
-    Reports["📝 reports app<br/>(Core Domain)"]:::backend
+    subgraph Infrastructure
+        DB[("SQLite / PostgreSQL")]
+        MED["Media Storage"]
+        SG["SendGrid"]
+    end
 
-    %% Infrastructure Layer (Bottom)
-    SG["📧 SendGrid API"]:::service
-    DB[("🗄️ SQLite / PostgreSQL")]:::storage
-    AI["🤖 Local BERT Model"]:::service
+    P -->|"submit · track"| R
+    D -->|"reports"| R
+    D -->|"analytics"| AN
+    D -->|"auth"| AC
 
-    %% Connections: Frontend to Backend (No overlapping)
-    Dashboard -->|Manage Users| Accounts
-    Dashboard -->|View Stats| Analytics
-    Dashboard -->|Manage Cases| Reports
-    
-    Portal -->|Submit & Track| Reports
+    R --> DB
+    R --> MED
+    R -.->|"predict severity"| ML
 
-    %% Internal Dependency
-    Analytics -.->|Import Models| Reports
+    AN --> DB
 
-    %% Connections: Backend to Infra (No overlapping)
-    Accounts -->|Welcome / Reset| SG
-    Accounts ==>|Read & Write| DB
-    
-    Analytics -.->|Read Only| DB
-    
-    Reports ==>|Read & Write| DB
-    Reports -->|Predict Severity| AI
+    AC --> DB
+    AC --> SG
 ```
 ---
 ## Core Domain Models
