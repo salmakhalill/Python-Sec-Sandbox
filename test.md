@@ -1,89 +1,77 @@
-# Analytics API
+# Accounts API
 
 `Base URL: https://salmakhalill.pythonanywhere.com`
 
-Both dashboard endpoints require an active authenticated user. Inactive users get empty objects back even with a valid token.
-
 ---
 
-### `GET /analytics/recent/` — recent dashboard
+### `POST /auth/login/`
 
-The main dashboard view. Returns KPI cards with trend comparisons and a time-bucketed bar chart.
-
-**Query params:**
-
-| Param | Default | Options |
-|---|---|---|
-| `period` | `daily` | `daily` · `weekly` · `monthly` |
-| `year` | — | Filter by year |
-| `location` | — | Case-insensitive substring match |
-
-**Response:**
 ```json
-{
-  "kpis": {
-    "total_reports":    { "value": 401, "change": 100.0, "trend": "زيادة" },
-    "new_reports":      { "value": 68,  "change": 100.0, "trend": "زيادة" },
-    "under_review":     { "value": 122, "change": 0,     "trend": "لا تغيير" },
-    "critical_reports": { "value": 29,  "change": 0,     "trend": "لا تغيير" }
-  },
-  "charts": {
-    "bar_chart": {
-      "الاثنين": 12, "الثلاثاء": 8, "الأربعاء": 15,
-      "الخميس": 9,  "الجمعة": 6,  "السبت": 11, "الأحد": 7
-    },
-    "status_distribution": { "تم استلام البلاغ": 14, "قيد المراجعة": 22 },
-    "heatmap": [{ "latitude": 30.0444, "longitude": 31.2357 }]
-  }
-}
+{ "email": "admin@securereport.com", "password": "..." }
 ```
 
-`trend` is one of: `زيادة` · `انخفاض` · `لا تغيير`
+Returns JWT tokens and user info. The `role`, `email`, and `status` are included in the response so the frontend can gate UI elements immediately — no separate `/me/` call needed.
 
-Bar chart keys change with the period:
-- `daily` → Arabic day names, last 7 days
-- `weekly` → الأسبوع 4 through الأسبوع 1
-- `monthly` → Arabic month names, last 12 months
-
----
-
-### `GET /analytics/stats/` — statistics tab
-
-Filterable by year. Returns all-time KPIs and full distribution charts instead of the recent-period view.
-
-**Response:**
 ```json
 {
-  "kpis": {
-    "total_reports": 401,
-    "top_report_type": "تحرش",
-    "solved_percentage": 18.5,
-    "top_region": "القاهرة"
-  },
-  "charts": {
-    "monthly_reports": { "يناير": 28, "فبراير": 35 },
-    "report_type_distribution": { "تحرش": 130, "اعتداء": 98 },
-    "case_status_distribution": { "تم استلام البلاغ": 68, "قيد المراجعة": 122 },
-    "heatmap": [{ "latitude": 30.0444, "longitude": 31.2357 }]
-  }
+  "access": "eyJ...",
+  "refresh": "eyJ...",
+  "role": "Admin",
+  "email": "admin@securereport.com",
+  "status": "active"
 }
 ```
 
 ---
 
-### `GET /analytics/site_stats/` — public stats
-
-No authentication. Used by the public portal landing page.
+### `POST /auth/refresh/`
 
 ```json
-{
-  "site_stats": {
-    "received_reports": 68,
-    "in_progress_reports": 94,
-    "closed_reports": 43,
-    "collaborating_entities": 20
-  }
-}
+{ "refresh": "eyJ..." }
 ```
 
-`collaborating_entities` is a fixed value for now.
+Returns a new `access` token. Access tokens expire in 1 hour, refresh tokens in 7 days.
+
+---
+
+### Password reset
+
+Two steps:
+
+**1. Request the email**  
+`POST /auth/password_reset/` → `{ "email": "..." }`
+
+Always returns `200` even if the email doesn't exist — prevents user enumeration.
+
+**2. Set the new password**  
+`POST /auth/password_reset_confirm/<uidb64>/<token>/`
+
+```json
+{ "new_password": "...", "confirm_password": "..." }
+```
+
+The token is single-use and tied to the user's current password hash, so it invalidates automatically after the password changes. Returns `400` if expired or already used.
+
+---
+
+### `GET · PATCH /account/`
+
+View or update the currently logged-in user's profile.
+
+To change password, include both `current_password` and `new_password`. The endpoint verifies the current password before proceeding.
+
+---
+
+### User management — Admin only
+
+**`GET /users/`** — list all staff accounts.
+
+**`POST /users/`** — create a new user. No password needed in the request — one is auto-generated and a welcome email goes out with a setup link.
+
+```json
+{ "email": "...", "full_name": "...", "role": "Employee" }
+```
+
+**`PATCH /users/<id>/`** — update role or status. Setting `status: Inactive` blocks access without deleting the account.
+
+**`DELETE /users/<id>/`** — returns `204`.
