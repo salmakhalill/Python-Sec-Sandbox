@@ -48,7 +48,7 @@ Public. No authentication required. Accepts `multipart/form-data` because the re
 }
 ```
 
-`severity` is null on creation — set by the AI classifier locally or manually by staff.
+`severity` is null on creation. It can later be set manually by staff or populated by the local AI classifier.
 
 ---
 
@@ -59,7 +59,7 @@ Requires authentication. Excludes `تم الحل` and `تم الإغلاق` — 
 Admins and Employees receive full detail. Viewers receive limited fields only.
 
 **Headers:**
-```
+```http
 Authorization: Bearer <access_token>
 ```
 
@@ -82,7 +82,7 @@ Authorization: Bearer <access_token>
 ]
 ```
 
-Viewer response (limited fields):
+Viewer response:
 ```json
 [
   {
@@ -131,11 +131,11 @@ Same role-based field restrictions as the list endpoint.
 Admin and Employee only. Partial update — send any subset of fields.
 
 **Headers:**
-```
+```http
 Authorization: Bearer <access_token>
 ```
 
-**Partial update — send any subset of fields:**
+**Example request body:**
 ```json
 {
   "status": "قيد المراجعة",
@@ -159,7 +159,7 @@ Authorization: Bearer <access_token>
 Admin and Employee only.
 
 **Headers:**
-```
+```http
 Authorization: Bearer <access_token>
 ```
 
