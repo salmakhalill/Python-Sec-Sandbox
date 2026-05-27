@@ -21,51 +21,38 @@ The following diagram showcases how the frontends, the Django core apps, the dat
 
 ```mermaid
 graph TD
-    subgraph Frontends [Frontend Apps React]
-        Portal[Public Portal]
-        Dashboard[Authority Dashboard]
+    %% Client Layer
+    Portal(Public Portal)
+    Dashboard(Authority Dashboard)
+
+    %% Backend Monolith
+    subgraph Django_Backend [Django Backend]
+        Accounts[accounts app]
+        Reports[reports app]
+        Analytics[analytics app]
     end
 
-    subgraph Backend [Django Monolith Backend]
-        API[DRF API Layer]
-        
-        subgraph Django_Apps [Core Modules]
-            Accounts[accounts app<br/>Auth & Roles]
-            Reports[reports app<br/>Core Domain & Logic]
-            Analytics[analytics app<br/>Pandas Read Layer]
-        end
-    end
+    %% External & Storage
+    DB[(Database)]
+    AI[Local AI Classifier]
+    SG[SendGrid API]
 
-    subgraph Storage [Data Layer]
-        DB[(SQLite / PostgreSQL Scaffolding)]
-    end
+    %% Frontend to Backend Flow
+    Portal -->|Submit & Track| Reports
+    Dashboard -->|Manage| Accounts
+    Dashboard -->|Manage| Reports
+    Dashboard -->|View| Analytics
 
-    subgraph Services [External & Local Services]
-        SG[SendGrid Email API]
-        AI[Local Arabic BERT Model]
-    end
+    %% Internal Dependency
+    Analytics -.->|Import Models| Reports
 
-    %% Frontend to API connections
-    Portal -->|Anonymous POST /reports| API
-    Portal -->|Public GET /track| API
-    Dashboard -->|JWT Auth Requests| API
-
-    %% API Layer routing to apps
-    API --> Accounts
-    API --> Reports
-    API --> Analytics
-
-    %% Internal App Dependencies & Rules
-    Analytics -->|Imports Models from| Reports
-    
-    %% Database connections
-    Accounts -->|Read/Write| DB
-    Reports -->|Read/Write| DB
+    %% Backend to Storage & Services
+    Accounts --> DB
+    Reports --> DB
     Analytics -.->|Read Only| DB
 
-    %% Service connections
-    Accounts -->|Trigger Welcome/Reset Token Emails| SG
-    Reports -->|Predict Severity via Local Script| AI
+    Accounts -->|Emails| SG
+    Reports -->|Predict| AI
 ```
 ---
 ## Core Domain Models
