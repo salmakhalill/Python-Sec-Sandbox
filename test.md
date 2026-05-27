@@ -65,6 +65,10 @@ flowchart TD
     R -.->|"predict severity"| ML
 
     AN -.->|"read only"| DB
+
+    %% --- روابط مخفية لإجبار المحاذاة (Invisible Alignment Links) ---
+    P ~~~ AC
+    D ~~~ AN
 ```
 ---
 ## Core Domain Models
