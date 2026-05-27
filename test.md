@@ -2,439 +2,185 @@
 
 # 🛡️ SecureReport
 
-**منصة بلاغات آمنة ومجهولة الهوية — من Digitopia 2025**
-
 ![Django](https://img.shields.io/badge/Django-5.2-092E20?style=flat-square&logo=django&logoColor=white)
 ![DRF](https://img.shields.io/badge/DRF-3.x-ff1709?style=flat-square&logo=django&logoColor=white)
 ![JWT](https://img.shields.io/badge/Auth-JWT-black?style=flat-square&logo=jsonwebtokens&logoColor=white)
 ![React](https://img.shields.io/badge/Frontend-React-61DAFB?style=flat-square&logo=react&logoColor=black)
+![Pandas](https://img.shields.io/badge/Pandas-150458?style=flat-square&logo=pandas&logoColor=white)
+![NumPy](https://img.shields.io/badge/NumPy-013243?style=flat-square&logo=numpy&logoColor=white)
 ![SendGrid](https://img.shields.io/badge/Email-SendGrid-1A82E2?style=flat-square&logo=sendgrid&logoColor=white)
-![Pandas](https://img.shields.io/badge/Analytics-Pandas-150458?style=flat-square&logo=pandas&logoColor=white)
-![NumPy](https://img.shields.io/badge/Analytics-NumPy-013243?style=flat-square&logo=numpy&logoColor=white)
 ![PythonAnywhere](https://img.shields.io/badge/Deploy-PythonAnywhere-1D9FD7?style=flat-square)
-![Digitopia](https://img.shields.io/badge/Digitopia-Phase%203%20Qualifier-gold?style=flat-square)
 
 <br/>
 
-> Built for **[Digitopia 2025](https://digitopia.gov.eg)** — Egypt's national ICT competition under the Ministry of Communications.
-> We reached **Phase 3** out of 4. 🏆
+🏆 **Digitopia 2025** — Phase 3 of 4 · Cybersecurity & AI track  
+National ICT Competition · Ministry of Communications, Egypt
 
-**This repository contains the backend only.**
-The frontend (React) was built by a teammate — my role was backend development and API integration with the React client.
+**Live API →** `https://salmakhalill.pythonanywhere.com`
 
 </div>
 
 ---
 
-## The Problem
+Most people who witness a crime don't report it — not because they don't care, but because they're scared of being identified. SecureReport is built around that reality.
 
-A lot of people witness crimes or get harassed but never report them — not because they don't want to, but because they're afraid. Afraid of being identified. Afraid of retaliation. Afraid that no one will take it seriously.
+No account. No identity. Fill out the form, get a tracking code, and follow your case through a live status timeline.
 
-SecureReport was built to remove that fear. Anyone can submit a report completely anonymously, attach evidence, and get a tracking code to follow up on their case.
+On the other side, the authority receiving those reports gets a full dashboard to manage cases, update statuses, and track trends through analytics.
+
+> **This repo is the backend only.**  
+> Two React frontends were built by a teammate. I owned the API design, database, analytics module, deployment, and all the integration work that connected both sides together.
 
 ---
 
-## What Is SecureReport?
+## Screenshots
 
-SecureReport is two web apps (two React frontends, one Django backend):
+| Public portal — status timeline | Authority dashboard |
+|---|---|
+| ![Tracking](docs/screenshots/tracking-timeline.png) | ![Dashboard](docs/screenshots/dashboard-analytics.png) |
 
-**1. Public Reporting Portal** — anyone can file a report with no registration, upload evidence, and receive a tracking code to follow their case through a visual status timeline.
-
-**2. Authority Dashboard** — a protected interface for the relevant organization to receive, review, manage, and archive reports, with full analytics.
+<div align="center">
+<br/>
+<img src="docs/screenshots/welcome-email.png" width="500"/>
+<br/><sub>Welcome email — sent automatically when a new staff account is created</sub>
+</div>
 
 ---
 
 ## Features
 
-### Public Portal
-- Anonymous reporting — no account, no identity required
-- 5 report types: Assault, Blackmail, Harassment, Theft, Altercation
-- Rich report details: location with map link and coordinates, incident date, description
-- Criminal info: name, description, additional notes
-- File attachments: audio recordings, images, documents
-- Auto-generated 12-character tracking code per report
-- Report tracking with a status timeline — the frontend renders each status stage visually so the reporter knows exactly where their case stands
+**Public portal**
 
-### Authority Dashboard
-- JWT-secured login with role-based access (Admin / Employee / Viewer)
-- Password reset by email via SendGrid
-- KPI cards with trend indicators: Total Reports, New Reports, Under Review, Critical Reports
-- Statistics page filterable by year
-- Reports table — update status, manage active cases
-- Archive — reports move here automatically when status is Solved or Closed
-- Account settings — update profile and change password
-- Heatmap — geographic distribution of incidents
+Reporters submit anonymously — location, incident date, description, suspect details, and file attachments. Audio files (`.mp3 .wav .webm .ogg`) are stored separately from other uploads. On submit, a unique 12-character tracking code is generated. Enter it later to see the case status through a visual timeline.
 
-### AI Severity Classifier *(local only — not deployed)*
-- Fine-tuned BERT model to auto-classify report severity: Critical / High / Medium / Low
-- Runs inference on `report_details` text at submission time
-- Excluded from deployment due to model size constraints — runs locally only
+**Authority dashboard**
+
+JWT login with three roles — Admin, Employee, and Viewer. KPI cards show total reports, new ones, under review, and critical cases, each with a trend indicator comparing current period to previous. Analytics charts have a daily / weekly / monthly toggle and are filterable by year. A geographic heatmap shows where incidents are concentrated. Reports move to the archive tab automatically when closed or solved.
+
+**AI severity classifier** *(local only)*
+
+Fine-tuned Arabic BERT model — predicts حرج / عالية / متوسطة / منخفضة at submission time. Not deployed because the weights (~400MB) are too large for PythonAnywhere. The `severity` field stays on the model; staff can set it manually, and there's a backfill script in `reports/ml_model.py`.
 
 ---
 
-## Tech Stack
+## Tech stack
 
-| Layer | Technology |
+| | |
 |---|---|
 | Framework | Django 5.2 + Django REST Framework |
-| Auth | SimpleJWT (access: 1h, refresh: 7d) |
-| Database | SQLite (dev) / SQLite on PythonAnywhere (prod) |
-| Analytics | Pandas · NumPy (translated from Power BI specs) |
-| AI Model | HuggingFace Transformers — BERT (local) |
+| Auth | SimpleJWT — 1h access, 7d refresh |
+| Database | SQLite |
+| Analytics | Pandas · NumPy |
+| AI | HuggingFace Transformers — Arabic BERT (local) |
 | Email | SendGrid |
-| Input Sanitization | bleach |
-| Frontend | React — built by teammate, integrated via REST API + CORS |
-| Deployment | PythonAnywhere (`salmakhalill.pythonanywhere.com`) |
-| CORS | django-cors-headers |
+| Sanitization | bleach |
+| Deployment | PythonAnywhere |
+
+SQLite is in production because PythonAnywhere's free tier doesn't support external connections — PostgreSQL config is in the settings file, commented out. Analytics uses Pandas instead of ORM aggregations because the KPI logic came from Power BI specs and mapped cleanly onto DataFrame operations.
 
 ---
 
-## My Role
-
-This was a 5-person team project:
-
-| Role | Responsibilities |
-|---|---|
-| **Backend (me)** | Django REST API, database models, analytics with Pandas + NumPy, JWT auth, role system, password reset, SendGrid integration, CORS config, production deployment on PythonAnywhere, security hardening |
-| Frontend | React — public reporting portal + authority dashboard (two separate domains) |
-| AI / Data Analyst | BERT severity classification model + Power BI analytics specs and KPI definitions |
-| Security | Penetration testing |
-
-The React frontend consumes this API. I handled all integration points: CORS setup, multipart form handling for file uploads, JWT token flow, and making sure the API responses matched what the frontend needed.
-
-The analytics module was built by translating Power BI specs and KPI definitions (provided by the data analyst teammate) into server-side Python using Pandas and NumPy — serving the results as a REST API consumed by the React dashboard.
-
----
-
-## Project Structure
+## Project structure
 
 ```
-backend/
-├── config/              # Django settings & root URLs
-├── accounts/            # Custom user model, JWT auth, roles, password reset
-│   ├── services/
-│   │   ├── auth_service.py      # UID/token helpers
-│   │   └── email_service.py     # SendGrid integration
-│   └── templates/accounts/emails/
-│       ├── welcome_user.html
-│       └── reset_password.html
-├── reports/             # Core report logic
-│   ├── models.py        # Report, CriminalInfo, Attachment
-│   ├── serializers.py   # Nested serializers + input sanitization
-│   ├── views.py         # List/Create/Update/Delete/Track/Archive
-│   └── ml_model.py      # BERT severity classifier (local only)
-└── analytics/           # Dashboard data
-    ├── utils.py         # Pandas processing, KPI & chart helpers
-    └── views.py         # REST endpoints for dashboard
+accounts/   auth, roles, user management, password reset, SendGrid
+reports/    Report · CriminalInfo · Attachment — models, serializers, views
+analytics/  KPI computation and chart endpoints — read-only, never writes to DB
+config/     settings, root URLs
+media/      uploaded files — audio/ and files/ subdirectories
 ```
 
 ---
 
-## API Endpoints
+## API
 
-### Reports
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| `POST` | `/api/reports/` | None | Submit anonymous report |
-| `GET` | `/api/reports/` | Required | List active reports |
-| `GET` | `/api/reports/track/<code>/` | None | Track report by code |
-| `GET` | `/api/reports/archive/` | Required | List archived reports |
-| `PATCH` | `/api/reports/<id>/` | Admin / Employee | Update report |
-| `DELETE` | `/api/reports/<id>/` | Admin / Employee | Delete report |
+<details>
+<summary><b>Reports</b></summary>
+<br/>
 
-### Analytics
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| `GET` | `/analytics/stats/` | Required | Classic dashboard — filterable by year |
-| `GET` | `/analytics/recent/` | Required | Recent KPIs — daily / weekly / monthly |
-| `GET` | `/analytics/site_stats/` | None | Public stats for landing page |
+| Method | Endpoint | Auth |
+|---|---|---|
+| `POST` | `/api/reports/` | Public |
+| `GET` | `/api/reports/` | Required |
+| `GET` | `/api/reports/track/<code>/` | Public |
+| `GET` | `/api/reports/archive/` | Required |
+| `PATCH` | `/api/reports/<id>/` | Admin · Employee |
+| `DELETE` | `/api/reports/<id>/` | Admin · Employee |
 
-### Accounts
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| `POST` | `/auth/login/` | None | Login — returns JWT + role |
-| `POST` | `/auth/refresh/` | None | Refresh access token |
-| `POST` | `/auth/password_reset/` | None | Request reset email |
-| `POST` | `/auth/password_reset_confirm/<uid>/<token>/` | None | Set new password |
-| `GET / PATCH` | `/account/` | Active user | View or update own account |
-| `GET / POST / PATCH / DELETE` | `/users/` | Admin only | Manage all users |
+</details>
+
+<details>
+<summary><b>Analytics</b></summary>
+<br/>
+
+| Method | Endpoint | Auth |
+|---|---|---|
+| `GET` | `/analytics/recent/` | Required |
+| `GET` | `/analytics/stats/` | Required |
+| `GET` | `/analytics/site_stats/` | Public |
+
+</details>
+
+<details>
+<summary><b>Accounts</b></summary>
+<br/>
+
+| Method | Endpoint | Auth |
+|---|---|---|
+| `POST` | `/auth/login/` | Public |
+| `POST` | `/auth/refresh/` | Public |
+| `POST` | `/auth/password_reset/` | Public |
+| `POST` | `/auth/password_reset_confirm/<uid>/<token>/` | Public |
+| `GET · PATCH` | `/account/` | Active user |
+| `GET · POST · PATCH · DELETE` | `/users/` | Admin only |
+
+</details>
+
+Full request/response reference → [`docs/api/`](docs/api/)
 
 ---
 
-## User Roles
-
-| Role | View Reports | Update Status | Delete | Manage Users |
-|---|---|---|---|---|
-| Admin | Full detail | Yes | Yes | Yes |
-| Employee | Full detail | Yes | Yes | No |
-| Viewer | Limited fields | No | No | No |
-
-Inactive users of any role get empty responses, even with a valid token.
-
----
-
-## Report Lifecycle
+## Report lifecycle
 
 ```
-Submit Report
-     │
-     ▼
-تم استلام البلاغ  (Received)
-     │
-     ▼
-قيد المراجعة  (Under Review)
-     │
-     ▼
-قيد المعالجة  (In Progress)
-     │
-     ├──▶  تم الحل  (Solved)  ──▶  Archive
-     │
-     └──▶  تم الإغلاق  (Closed)  ──▶  Archive
-```
-
-The React frontend renders this as a visual timeline when the reporter enters their tracking code.
-
----
-
-## Production Config Highlights
-
-The production settings include Django security hardening that's off in dev:
-
-```python
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_HTTPONLY = True
-CSRF_COOKIE_HTTPONLY = True
-SECURE_SSL_REDIRECT = True
-X_FRAME_OPTIONS = "DENY"
-SECURE_BROWSER_XSS_FILTER = True
-SECURE_CONTENT_TYPE_NOSNIFF = True
-```
-
-`DEBUG` is driven by an environment variable so dev and prod never share the same config. All secrets (secret key, SendGrid API key, sender email) are loaded from `.env` via `python-dotenv`.
-
----
-
-## Mermaid Diagrams
-
-### Class Diagram
-
-```mermaid
-classDiagram
-    class Report {
-        +String tracking_code
-        +String location
-        +Decimal latitude
-        +Decimal longitude
-        +String location_link
-        +Date incident_date
-        +Text report_details
-        +String contact_info
-        +String report_type
-        +String status
-        +String severity
-        +Boolean is_fake
-        +DateTime created_at
-        +save()
-    }
-
-    class CriminalInfo {
-        +String name
-        +Text description
-        +Text other_info
-    }
-
-    class Attachment {
-        +File audio_recording
-        +File file
-    }
-
-    class CustomUser {
-        +String email
-        +String full_name
-        +String role
-        +String status
-        +DateTime date_joined
-    }
-
-    Report "1" --> "0..*" CriminalInfo : has
-    Report "1" --> "0..*" Attachment : has
-    CustomUser --> Report : manages
+Submitted → Received → Under Review → In Progress ┬→ Solved ──→ Archive
+                                                   └→ Closed ──→ Archive
 ```
 
 ---
 
-### Sequence Diagram — Anonymous Report Submission
-
-```mermaid
-sequenceDiagram
-    actor Citizen
-    participant React as React Frontend
-    participant API as Django API
-    participant DB
-    participant AI as BERT Model
-
-    Citizen->>React: Fill report form + upload files
-    React->>API: POST /api/reports/ (multipart/form-data)
-    API->>API: Sanitize inputs with bleach
-    API->>DB: Create Report (tracking_code auto-generated)
-    API->>AI: predict_severity(report_details)
-    Note over AI: Local only — commented out in production
-    AI-->>API: severity level
-    API->>DB: Save severity + CriminalInfo + Attachments
-    DB-->>API: Report saved
-    API-->>React: { tracking_code: "A1B2C3D4E5F6" }
-    React-->>Citizen: Show tracking code — save it!
-```
-
----
-
-### Sequence Diagram — Report Tracking with Timeline
-
-```mermaid
-sequenceDiagram
-    actor Citizen
-    participant React as React Frontend
-    participant API as Django API
-    participant DB
-
-    Citizen->>React: Enter tracking code
-    React->>API: GET /api/reports/track/{code}/
-    API->>DB: Lookup Report by tracking_code
-    DB-->>API: { status, report_type, created_at }
-    API-->>React: Report data
-    React-->>Citizen: Visual status timeline showing current stage
-    Note over React,Citizen: Received → Under Review → In Progress → Solved/Closed
-```
-
----
-
-### Sequence Diagram — Password Reset Flow
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant React as React Frontend
-    participant API as Django API
-    participant DB
-    participant SG as SendGrid
-
-    User->>React: Enter email on Forgot Password
-    React->>API: POST /auth/password_reset/
-    API->>DB: Find user by email
-    DB-->>API: User found
-    API->>API: Generate uid + token
-    API->>SG: Send HTML reset email
-    SG-->>User: Email with reset link
-
-    User->>React: Click link → enter new password
-    React->>API: POST /auth/password_reset_confirm/{uid}/{token}/
-    API->>API: Validate token
-    API->>DB: Update password hash
-    API-->>React: { success: true }
-    React-->>User: Password updated
-```
-
----
-
-### Component Diagram
-
-```mermaid
-graph LR
-    subgraph Frontends["React Frontends (teammate)"]
-        P["Public Portal\nReport · Track"]
-        D["Authority Dashboard\nKPIs · Reports · Archive"]
-    end
-
-    subgraph Django["Django Backend (this repo)"]
-        R["reports app\nAPI · Serializers · Models"]
-        AN["analytics app\nPandas · KPIs · Charts"]
-        AC["accounts app\nJWT · Roles · SendGrid"]
-        ML["BERT Model\nlocal only"]
-    end
-
-    subgraph Infra["Infrastructure"]
-        DB[("SQLite / PostgreSQL")]
-        MED["Media Storage\naudio · files"]
-        SG["SendGrid\nemail"]
-    end
-
-    P -->|"POST /api/reports/"| R
-    P -->|"GET /api/reports/track/"| R
-    D -->|"GET/PATCH /api/reports/"| R
-    D -->|"GET /analytics/"| AN
-    D -->|"POST /auth/login/"| AC
-
-    R --> DB
-    R --> MED
-    R -.->|"on submission"| ML
-    AN --> DB
-    AC --> DB
-    AC --> SG
-```
-
----
-
-## Local Setup
+## Quick start
 
 ```bash
-# 1. Clone and create virtual environment
 git clone https://github.com/salmakhalill/SecureReport_django.git
 cd SecureReport_django
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 2. Install dependencies
+python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-
-# 3. Set environment variables
 cp .env.example .env
-# Fill in: SECRET_KEY, SENDGRID_API_KEY, DEFAULT_FROM_EMAIL
-
-# 4. Run migrations and create admin
-python manage.py migrate
-python manage.py createsuperuser
-
-# 5. Start server
+python manage.py migrate && python manage.py createsuperuser
 python manage.py runserver
 ```
 
-### Environment Variables
+`.env` variables: `SECRET_KEY` · `DEBUG` · `SENDGRID_API_KEY` · `DEFAULT_FROM_EMAIL`
 
-```env
-SECRET_KEY=your-django-secret-key
-DEBUG=True
-SENDGRID_API_KEY=your-sendgrid-key
-DEFAULT_FROM_EMAIL=noreply@yourdomain.com
-```
+Full guide with troubleshooting and AI classifier setup → [`docs/setup.md`](docs/setup.md)
 
 ---
 
-## AI Model (Local Only)
+## Documentation
 
-The severity classifier is a fine-tuned BERT model trained on Arabic crime report text. It predicts one of four levels: حرج / عالية / متوسطة / منخفضة (Critical / High / Medium / Low).
-
-To run it locally, place the model in the path set by `MODEL_DIR` in `reports/ml_model.py`, then uncomment the inference call in `views.py`.
-
-To backfill severity on existing reports:
-```python
-# python manage.py shell
-from reports.models import Report
-from reports.ml_model import predict_severity
-
-for report in Report.objects.filter(severity__isnull=True):
-    report.severity = predict_severity(report.report_details)
-    report.save(update_fields=["severity"])
-```
-
----
-
-## Live Demo
-
-Backend deployed at: `https://salmakhalill.pythonanywhere.com`
+| | |
+|---|---|
+| [`docs/api/`](docs/api/) | Full endpoint reference with request/response examples |
+| [`docs/database/erd.md`](docs/database/erd.md) | Entity relationship diagram |
+| [`docs/database/data-dictionary.md`](docs/database/data-dictionary.md) | Field reference for all models |
+| [`docs/sequence-diagrams.md`](docs/sequence-diagrams.md) | Submission, tracking, and password reset flows |
+| [`docs/class-diagram.md`](docs/class-diagram.md) | Model relationships |
+| [`docs/architecture.md`](docs/architecture.md) | Technical decisions and trade-offs |
+| [`docs/setup.md`](docs/setup.md) | Local setup + troubleshooting |
 
 ---
 
 <div align="center">
-  <sub>Built with care for a safer Egypt 🇪🇬 — Digitopia 2025, Phase 3</sub>
+<sub>Digitopia 2025 · Phase 3 of 4 · Egypt 🇪🇬</sub>
 </div>
