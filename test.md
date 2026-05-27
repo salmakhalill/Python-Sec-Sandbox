@@ -25,14 +25,9 @@ flowchart TD
     %% Frontends
     subgraph F["Frontend Apps"]
         direction LR
-        S1[" "]
         P["Public Portal"]
         D["Authority Dashboard"]
-        S2[" "]
     end
-    %% إخفاء العناصر الوهمية تماماً
-    style S1 fill:none,stroke-width:0px,color:transparent
-    style S2 fill:none,stroke-width:0px,color:transparent
 
     %% Backend
     subgraph B["Django Backend"]
@@ -71,13 +66,9 @@ flowchart TD
 
     AN -.->|"read only"| DB
 
-    %% --- حيل المحاذاة والتوسيط (Alignment Hacks) ---
-    %% 1. إجبار ترتيب العناصر جوه بلوك الفرونت
-    S1 ~~~ P ~~~ D ~~~ S2
-
-    %% 2. ربط الأطراف الوهمية بأطراف الباك إند عشان البلوك يعرض
-    S1 ~~~ AC
-    S2 ~~~ AN
+    %% --- روابط مخفية لإجبار المحاذاة (Invisible Alignment Links) ---
+    P ~~~ AC
+    D ~~~ AN
 ```
 ---
 ## Core Domain Models
