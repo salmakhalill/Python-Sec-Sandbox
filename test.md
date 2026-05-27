@@ -1,186 +1,194 @@
-<div align="center">
-
-# 🛡️ SecureReport
-
-![Django](https://img.shields.io/badge/Django-5.2-092E20?style=flat-square&logo=django&logoColor=white)
-![DRF](https://img.shields.io/badge/DRF-3.x-ff1709?style=flat-square&logo=django&logoColor=white)
-![JWT](https://img.shields.io/badge/Auth-JWT-black?style=flat-square&logo=jsonwebtokens&logoColor=white)
-![React](https://img.shields.io/badge/Frontend-React-61DAFB?style=flat-square&logo=react&logoColor=black)
-![Pandas](https://img.shields.io/badge/Pandas-150458?style=flat-square&logo=pandas&logoColor=white)
-![NumPy](https://img.shields.io/badge/NumPy-013243?style=flat-square&logo=numpy&logoColor=white)
-![SendGrid](https://img.shields.io/badge/Email-SendGrid-1A82E2?style=flat-square&logo=sendgrid&logoColor=white)
-![PythonAnywhere](https://img.shields.io/badge/Deploy-PythonAnywhere-1D9FD7?style=flat-square)
-
-<br/>
-
-🏆 **Digitopia 2025** — Phase 3 of 4 · Cybersecurity & AI track  
-National ICT Competition · Ministry of Communications, Egypt
-
-**Live API →** `https://salmakhalill.pythonanywhere.com`
-
-</div>
+# Architecture & Technical Decisions
 
 ---
 
-Most people who witness a crime don't report it — not because they don't care, but because they're scared of being identified. SecureReport is built around that reality.
+## App structure
 
-No account. No identity. Fill out the form, get a tracking code, and follow your case through a live status timeline.
+Three apps, each with one job:
 
-On the other side, the authority receiving those reports gets a full dashboard to manage cases, update statuses, and track trends through analytics.
+```
+accounts/   who you are — auth, roles, user management
+reports/    what gets reported — the core domain
+analytics/  how it's aggregated — reads only, never writes
+```
 
-> **This repo is the backend only.**  
-> Two React frontends were built by a teammate. I owned the API design, database, analytics module, deployment, and all the integration work that connected both sides together.
+`analytics` imports from `reports`, never the other way around. No circular dependencies. The separation also means if the analytics module breaks, the core reporting flow is unaffected.
 
 ---
 
-## Screenshots
+### System Component Architecture
+The following diagram showcases how the frontends, the Django core apps, the database, and the external services interact structurally as isolated components:
 
-| Public portal — status timeline | Authority dashboard |
+```mermaid
+graph TD
+    subgraph Frontends [Frontend Apps React]
+        Portal[Public Portal]
+        Dashboard[Authority Dashboard]
+    end
+
+    subgraph Backend [Django Monolith Backend]
+        API[DRF API Layer]
+        
+        subgraph Django_Apps [Core Modules]
+            Accounts[accounts app<br/>Auth & Roles]
+            Reports[reports app<br/>Core Domain & Logic]
+            Analytics[analytics app<br/>Pandas Read Layer]
+        end
+    end
+
+    subgraph Storage [Data Layer]
+        DB[(SQLite / PostgreSQL Scaffolding)]
+    end
+
+    subgraph Services [External & Local Services]
+        SG[SendGrid Email API]
+        AI[Local Arabic BERT Model]
+    end
+
+    %% Frontend to API connections
+    Portal -->|Anonymous POST /reports| API
+    Portal -->|Public GET /track| API
+    Dashboard -->|JWT Auth Requests| API
+
+    %% API Layer routing to apps
+    API --> Accounts
+    API --> Reports
+    API --> Analytics
+
+    %% Internal App Dependencies & Rules
+    Analytics -->|Imports Models from| Reports
+    
+    %% Database connections
+    Accounts -->|Read/Write| DB
+    Reports -->|Read/Write| DB
+    Analytics -.->|Read Only| DB
+
+    %% Service connections
+    Accounts -->|Trigger Welcome/Reset Token Emails| SG
+    Reports -->|Predict Severity via Local Script| AI
+
+## Core Domain Models
+The following class diagram illustrates the primary entities and their relationships across the apps:
+
+```mermaid
+classDiagram
+    class Report {
+        +String tracking_code
+        +String location
+        +Decimal latitude
+        +Decimal longitude
+        +String location_link
+        +Date incident_date
+        +Text report_details
+        +String contact_info
+        +String report_type
+        +String status
+        +String severity
+        +Boolean is_fake
+        +DateTime created_at
+        +save()
+    }
+    class CriminalInfo {
+        +String name
+        +Text description
+        +Text other_info
+    }
+    class Attachment {
+        +File audio_recording
+        +File file
+    }
+    class CustomUser {
+        +String email
+        +String full_name
+        +String role
+        +String status
+        +DateTime date_joined
+    }
+
+    Report "1" --> "0..*" CriminalInfo
+    Report "1" --> "0..*" Attachment
+    CustomUser --> Report : manages
+
+## DRF over FastAPI
+
+The project already uses Django's ORM, admin panel, and `AbstractBaseUser`. DRF sits on top of that with near-zero overhead. FastAPI would've meant rebuilding things that come for free.
+
+The nested serializer pattern also fits naturally here — a `Report` submission creates `CriminalInfo` and `Attachment` records in the same request, and DRF handles that cleanly.
+
+---
+
+## JWT + custom login response
+
+Dashboard users need persistent sessions without server-stored state. SimpleJWT handles that with a 1-hour access token and a 7-day refresh token.
+
+The login serializer (`MyTokenObtainPairSerializer`) adds `role`, `email`, and `status` to the response. The frontend gates UI elements immediately without making a separate `/me/` call.
+
+---
+
+## No auth on the public portal
+
+Requiring registration would defeat the entire point. The trade-off is open submission — anyone can file a report, including fake ones. The `is_fake` flag on `Report` lets staff mark them manually.
+
+---
+
+## Role system
+
+Three roles that map directly to real-world access patterns in a government system:
+
+- **Admin** — system owner, manages user accounts, full access, can delete
+- **Employee** — case worker, handles reports, can't touch user accounts  
+- **Viewer** — observer (e.g. partner organization), read-only, limited fields only
+
+`CustomUser` has both `is_active` (Django built-in) and `status` (our field). `is_active=False` blocks at the auth layer. `status='inactive'` is the application-level check all views enforce — used when someone leaves the organization without deleting their account.
+
+---
+
+## Archive as a separate endpoint
+
+`/api/reports/` and `/api/reports/archive/` are two separate endpoints, not one with a filter param. The active-cases view should never accidentally show closed cases — that's a product requirement enforced in `get_queryset()`, not left to the frontend.
+
+---
+
+## Pandas for analytics
+
+The KPI formulas came from Power BI specs provided by the data analyst on the team — time-bucketing, rolling period comparisons, Arabic label mapping. Translating that into ORM annotations would've been verbose and hard to maintain. Pandas was the cleaner fit.
+
+Known trade-off: loading all reports into a DataFrame per request won't scale past tens of thousands of rows. For the current dataset it's fine. The fix — database-level aggregation or a caching layer — can be dropped in without changing the API shape.
+
+---
+
+## SQLite in production
+
+PythonAnywhere's free tier doesn't support external DB connections. SQLite covers the current load — mostly reads, infrequent writes. The settings file has PostgreSQL config commented out for when the project moves to a paid tier.
+
+---
+
+## Security hardening
+
+Enabled in production (`DEBUG=False`):
+
+| Setting | Purpose |
 |---|---|
-| ![Tracking](docs/screenshots/tracking-timeline.png) | ![Dashboard](docs/screenshots/dashboard-analytics.png) |
+| `SECURE_SSL_REDIRECT` | Force HTTPS |
+| `SESSION_COOKIE_SECURE` | Session cookie over HTTPS only |
+| `CSRF_COOKIE_SECURE` | CSRF cookie over HTTPS only |
+| `SESSION_COOKIE_HTTPONLY` | No JS access to session cookie |
+| `X_FRAME_OPTIONS = DENY` | Prevent clickjacking |
+| `SECURE_CONTENT_TYPE_NOSNIFF` | Prevent MIME sniffing |
+| `SECURE_BROWSER_XSS_FILTER` | Browser XSS protection header |
 
-<div align="center">
-<br/>
-<img src="docs/screenshots/welcome-email.png" width="500"/>
-<br/><sub>Welcome email — sent automatically when a new staff account is created</sub>
-</div>
-
----
-
-## Features
-
-**Public portal**
-
-Reporters submit anonymously — location, incident date, description, suspect details, and file attachments. Audio files (`.mp3 .wav .webm .ogg`) are stored separately from other uploads. On submit, a unique 12-character tracking code is generated. Enter it later to see the case status through a visual timeline.
-
-**Authority dashboard**
-
-JWT login with three roles — Admin, Employee, and Viewer. KPI cards show total reports, new ones, under review, and critical cases, each with a trend indicator comparing current period to previous. Analytics charts have a daily / weekly / monthly toggle and are filterable by year. A geographic heatmap shows where incidents are concentrated. Reports move to the archive tab automatically when closed or solved.
-
-**AI severity classifier** *(local only)*
-
-Fine-tuned Arabic BERT model — predicts حرج / عالية / متوسطة / منخفضة at submission time. Not deployed because the weights (~400MB) are too large for PythonAnywhere. The `severity` field stays on the model; staff can set it manually, and there's a backfill script in `reports/ml_model.py`.
+Public portal input (`location`, `report_details`, `contact_info`) is sanitized with `bleach` — HTML stripped before touching the database.
 
 ---
 
-## Tech stack
+## SendGrid over SMTP
 
-| | |
-|---|---|
-| Framework | Django 5.2 + Django REST Framework |
-| Auth | SimpleJWT — 1h access, 7d refresh |
-| Database | SQLite |
-| Analytics | Pandas · NumPy |
-| AI | HuggingFace Transformers — Arabic BERT (local) |
-| Email | SendGrid |
-| Sanitization | bleach |
-| Deployment | PythonAnywhere |
-
-SQLite is in production because PythonAnywhere's free tier doesn't support external connections — PostgreSQL config is in the settings file, commented out. Analytics uses Pandas instead of ORM aggregations because the KPI logic came from Power BI specs and mapped cleanly onto DataFrame operations.
+Gmail SMTP needs app passwords and has tighter rate limits. SendGrid's free tier is simpler and HTML templates render more reliably. Both transactional emails (welcome and password reset) use Django's `default_token_generator` — single-use tokens tied to the user's current password hash.
 
 ---
 
-## Project structure
+## AI classifier
 
-```
-accounts/   auth, roles, user management, password reset, SendGrid
-reports/    Report · CriminalInfo · Attachment — models, serializers, views
-analytics/  KPI computation and chart endpoints — read-only, never writes to DB
-config/     settings, root URLs
-media/      uploaded files — audio/ and files/ subdirectories
-```
+Fine-tuned Arabic BERT model (~400MB) — predicts severity at submission time. Excluded from the deployed version because the weights exceed PythonAnywhere's memory limit for web workers.
 
----
-
-## API
-
-<details>
-<summary><b>Reports</b></summary>
-<br/>
-
-| Method | Endpoint | Auth |
-|---|---|---|
-| `POST` | `/api/reports/` | Public |
-| `GET` | `/api/reports/` | Required |
-| `GET` | `/api/reports/track/<code>/` | Public |
-| `GET` | `/api/reports/archive/` | Required |
-| `PATCH` | `/api/reports/<id>/` | Admin · Employee |
-| `DELETE` | `/api/reports/<id>/` | Admin · Employee |
-
-</details>
-
-<details>
-<summary><b>Analytics</b></summary>
-<br/>
-
-| Method | Endpoint | Auth |
-|---|---|---|
-| `GET` | `/analytics/recent/` | Required |
-| `GET` | `/analytics/stats/` | Required |
-| `GET` | `/analytics/site_stats/` | Public |
-
-</details>
-
-<details>
-<summary><b>Accounts</b></summary>
-<br/>
-
-| Method | Endpoint | Auth |
-|---|---|---|
-| `POST` | `/auth/login/` | Public |
-| `POST` | `/auth/refresh/` | Public |
-| `POST` | `/auth/password_reset/` | Public |
-| `POST` | `/auth/password_reset_confirm/<uid>/<token>/` | Public |
-| `GET · PATCH` | `/account/` | Active user |
-| `GET · POST · PATCH · DELETE` | `/users/` | Admin only |
-
-</details>
-
-Full request/response reference → [`docs/api/`](docs/api/)
-
----
-
-## Report lifecycle
-
-```
-Submitted → Received → Under Review → In Progress ┬→ Solved ──→ Archive
-                                                   └→ Closed ──→ Archive
-```
-
----
-
-## Quick start
-
-```bash
-git clone https://github.com/salmakhalill/SecureReport_django.git
-cd SecureReport_django
-python -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-python manage.py migrate && python manage.py createsuperuser
-python manage.py runserver
-```
-
-`.env` variables: `SECRET_KEY` · `DEBUG` · `SENDGRID_API_KEY` · `DEFAULT_FROM_EMAIL`
-
-Full guide with troubleshooting and AI classifier setup → [`docs/setup.md`](docs/setup.md)
-
----
-
-## Documentation
-
-| | |
-|---|---|
-| [`docs/api/`](docs/api/) | Full endpoint reference with request/response examples |
-| [`docs/database/erd.md`](docs/database/erd.md) | Entity relationship diagram |
-| [`docs/database/data-dictionary.md`](docs/database/data-dictionary.md) | Field reference for all models |
-| [`docs/sequence-diagrams.md`](docs/sequence-diagrams.md) | Submission, tracking, and password reset flows |
-| [`docs/class-diagram.md`](docs/class-diagram.md) | Model relationships |
-| [`docs/architecture.md`](docs/architecture.md) | Technical decisions and trade-offs |
-| [`docs/setup.md`](docs/setup.md) | Local setup + troubleshooting |
-
----
-
-<div align="center">
-<sub>Digitopia 2025 · Phase 3 of 4 · Egypt 🇪🇬</sub>
-</div>
+The call in `views.py` is commented out, not deleted. The `severity` field stays on the model, staff can set it manually, and the backfill script in `ml_model.py` can populate it locally when needed.
