@@ -21,38 +21,49 @@ The following diagram showcases how the frontends, the Django core apps, the dat
 
 ```mermaid
 graph TD
-    %% Client Layer
-    Portal(Public Portal)
-    Dashboard(Authority Dashboard)
+    %% Custom Styles for a Premium Look
+    classDef frontend fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#000;
+    classDef backend fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000;
+    classDef storage fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#000;
+    classDef service fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000;
 
-    %% Backend Monolith
-    subgraph Django_Backend [Django Backend]
-        Accounts[accounts app]
-        Reports[reports app]
-        Analytics[analytics app]
-    end
+    %% Layer 1: Frontends (Top)
+    Dashboard("Authority Dashboard"):::frontend
+    Portal("Public Portal"):::frontend
 
-    %% External & Storage
-    DB[(Database)]
-    AI[Local AI Classifier]
-    SG[SendGrid API]
+    %% Layer 2: API Gateway (Upper Middle)
+    API{"DRF API Layer<br/>(JWT Auth & Routing)"}:::backend
 
-    %% Frontend to Backend Flow
-    Portal -->|Submit & Track| Reports
-    Dashboard -->|Manage| Accounts
-    Dashboard -->|Manage| Reports
-    Dashboard -->|View| Analytics
+    %% Layer 3: Core Apps (Lower Middle)
+    Accounts["accounts app<br/>(Auth, Users, Roles)"]:::backend
+    Analytics["analytics app<br/>(Pandas KPIs)"]:::backend
+    Reports["reports app<br/>(Core Domain Logic)"]:::backend
 
-    %% Internal Dependency
-    Analytics -.->|Import Models| Reports
+    %% Layer 4: Infrastructure (Bottom)
+    SG["SendGrid API<br/>(Welcome & Reset)"]:::service
+    DB[("SQLite / PostgreSQL<br/>(Main Storage)")]:::storage
+    AI["Local BERT Model<br/>(Severity Classifier)"]:::service
 
-    %% Backend to Storage & Services
-    Accounts --> DB
-    Reports --> DB
+    %% Flow 1: Frontends to API
+    Dashboard -->|Manage Cases, Users & Stats| API
+    Portal -->|Submit & Track Reports| API
+
+    %% Flow 2: API to Apps
+    API -->|Route: /auth/ , /users/| Accounts
+    API -->|Route: /analytics/| Analytics
+    API -->|Route: /reports/| Reports
+
+    %% Flow 3: Inter-App Dependencies
+    Analytics -.->|Imports Models from| Reports
+
+    %% Flow 4: Apps to Storage
+    Accounts -->|Read & Write| DB
     Analytics -.->|Read Only| DB
+    Reports -->|Read & Write| DB
 
-    Accounts -->|Emails| SG
-    Reports -->|Predict| AI
+    %% Flow 5: Apps to External Services
+    Accounts -->|Trigger Emails| SG
+    Reports -->|Predict Severity| AI
 ```
 ---
 ## Core Domain Models
