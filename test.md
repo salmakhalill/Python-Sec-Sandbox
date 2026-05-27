@@ -20,49 +20,44 @@ analytics/  how it's aggregated — reads only, never writes
 The following diagram showcases how the frontends, the Django core apps, the database, and the external services interact structurally as isolated components:
 
 ```mermaid
-graph TD
-    %% Custom Styles for a Premium Look
-    classDef frontend fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#000;
-    classDef backend fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000;
-    classDef storage fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#000;
-    classDef service fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000;
+flowchart TD
+    %% Modern Premium Styling
+    classDef frontend fill:#f8fafc,stroke:#cbd5e1,stroke-width:1px,color:#333,rx:8px,ry:8px;
+    classDef backend fill:#eff6ff,stroke:#93c5fd,stroke-width:2px,color:#1e40af,rx:8px,ry:8px;
+    classDef storage fill:#f0fdf4,stroke:#86efac,stroke-width:2px,color:#166534,rx:8px,ry:8px;
+    classDef service fill:#fff7ed,stroke:#fdba74,stroke-width:2px,color:#9a3412,rx:8px,ry:8px;
 
-    %% Layer 1: Frontends (Top)
-    Dashboard("Authority Dashboard"):::frontend
-    Portal("Public Portal"):::frontend
+    %% Client Layer (Top)
+    Dashboard("🖥️ Authority Dashboard"):::frontend
+    Portal("🌐 Public Portal"):::frontend
 
-    %% Layer 2: API Gateway (Upper Middle)
-    API{"DRF API Layer<br/>(JWT Auth & Routing)"}:::backend
+    %% Django Apps Layer (Middle)
+    Accounts["🔐 accounts app<br/>(Auth & Roles)"]:::backend
+    Analytics["📊 analytics app<br/>(Pandas KPIs)"]:::backend
+    Reports["📝 reports app<br/>(Core Domain)"]:::backend
 
-    %% Layer 3: Core Apps (Lower Middle)
-    Accounts["accounts app<br/>(Auth, Users, Roles)"]:::backend
-    Analytics["analytics app<br/>(Pandas KPIs)"]:::backend
-    Reports["reports app<br/>(Core Domain Logic)"]:::backend
+    %% Infrastructure Layer (Bottom)
+    SG["📧 SendGrid API"]:::service
+    DB[("🗄️ SQLite / PostgreSQL")]:::storage
+    AI["🤖 Local BERT Model"]:::service
 
-    %% Layer 4: Infrastructure (Bottom)
-    SG["SendGrid API<br/>(Welcome & Reset)"]:::service
-    DB[("SQLite / PostgreSQL<br/>(Main Storage)")]:::storage
-    AI["Local BERT Model<br/>(Severity Classifier)"]:::service
+    %% Connections: Frontend to Backend (No overlapping)
+    Dashboard -->|Manage Users| Accounts
+    Dashboard -->|View Stats| Analytics
+    Dashboard -->|Manage Cases| Reports
+    
+    Portal -->|Submit & Track| Reports
 
-    %% Flow 1: Frontends to API
-    Dashboard -->|Manage Cases, Users & Stats| API
-    Portal -->|Submit & Track Reports| API
+    %% Internal Dependency
+    Analytics -.->|Import Models| Reports
 
-    %% Flow 2: API to Apps
-    API -->|Route: /auth/ , /users/| Accounts
-    API -->|Route: /analytics/| Analytics
-    API -->|Route: /reports/| Reports
-
-    %% Flow 3: Inter-App Dependencies
-    Analytics -.->|Imports Models from| Reports
-
-    %% Flow 4: Apps to Storage
-    Accounts -->|Read & Write| DB
+    %% Connections: Backend to Infra (No overlapping)
+    Accounts -->|Welcome / Reset| SG
+    Accounts ==>|Read & Write| DB
+    
     Analytics -.->|Read Only| DB
-    Reports -->|Read & Write| DB
-
-    %% Flow 5: Apps to External Services
-    Accounts -->|Trigger Emails| SG
+    
+    Reports ==>|Read & Write| DB
     Reports -->|Predict Severity| AI
 ```
 ---
