@@ -24,12 +24,14 @@ flowchart TD
 
     %% Frontends
     subgraph F["Frontend Apps"]
+        direction LR
         P["Public Portal"]
         D["Authority Dashboard"]
     end
 
     %% Backend
     subgraph B["Django Backend"]
+        direction LR
         AC["accounts app"]
         R["reports app"]
         AN["analytics app"]
@@ -37,16 +39,16 @@ flowchart TD
 
     %% Infrastructure
     subgraph I["Infrastructure & Services"]
+        direction LR
         DB[("SQLite / PostgreSQL")]
         MED["Media Storage"]
         SG["SendGrid"]
         ML["Arabic BERT Model<br/>(local only)"]
     end
 
-    %% Public portal
+    %% Frontend → Backend
     P -->|"submit · track"| R
 
-    %% Dashboard
     D -->|"auth"| AC
     D -->|"reports"| R
     D -->|"analytics"| AN
@@ -54,7 +56,7 @@ flowchart TD
     %% Internal dependency
     AN -.->|"imports models"| R
 
-    %% Backend connections
+    %% Backend → Infrastructure
     AC --> DB
     AC --> SG
 
@@ -63,6 +65,10 @@ flowchart TD
     R -.->|"predict severity"| ML
 
     AN -.->|"read only"| DB
+
+    %% --- روابط مخفية لإجبار المحاذاة (Invisible Alignment Links) ---
+    P ~~~ AC
+    D ~~~ AN
 ```
 ---
 ## Core Domain Models
