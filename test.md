@@ -1,110 +1,117 @@
-# Setup
+# Architecture & Technical Decisions
 
 ---
 
-## Getting started
+## Project Structure
 
-```bash
-git clone https://github.com/salmakhalill/SecureReport_django.git
-cd SecureReport_django
+SecureReport is a Django monolith split into three apps, each with a single responsibility:
 
-python -m venv venv
-source venv/bin/activate      # Windows: venv\Scripts\activate
-
-pip install -r requirements.txt
+```
+accounts/    → identity: who you are, authentication, permissions
+reports/     → core domain: what gets reported, by whom (anonymous), in what state
+analytics/   → read layer: how reports are aggregated and surfaced to the dashboard
 ```
 
-Create `.env` in the project root (same level as `manage.py`):
-
-```env
-SECRET_KEY=        # see below
-DEBUG=True
-SENDGRID_API_KEY=  # optional in dev
-DEFAULT_FROM_EMAIL=
-```
-
-Generate a secret key:
-```bash
-python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
-```
-
-Then run:
-```bash
-python manage.py migrate
-python manage.py createsuperuser
-python manage.py runserver
-```
-
-API at `http://localhost:8000` — Django admin at `http://localhost:8000/admin/`
+This separation means analytics never writes to the database — it only reads. Reports never touch auth logic. The apps only communicate through model imports, not circular dependencies.
 
 ---
 
-## Email setup
+## Why Django REST Framework
 
-In development, emails print to the terminal by default (`EMAIL_BACKEND = console`). No SendGrid needed to get started.
+The two frontends (public portal and authority dashboard) are separate React apps on separate domains. A REST API is the only sensible interface between them and the backend — it decouples deployment, lets the frontend iterate independently, and is easy to test with any HTTP client.
 
-To send real emails: create a free account at [sendgrid.com](https://sendgrid.com), go to Settings → API Keys → Create (Full Access), then add the key and a verified sender address to `.env`. The rest is already wired up in `accounts/services/email_service.py`.
-
----
-
-## Creating test users
-
-```bash
-# get a token
-curl -X POST http://localhost:8000/auth/login/ \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@example.com","password":"yourpassword"}'
-
-# create a staff account (welcome email sent automatically)
-curl -X POST http://localhost:8000/users/ \
-  -H "Authorization: Bearer <access_token>" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"staff@example.com","full_name":"Test","role":"Employee"}'
-```
-
-Or create them directly in the Django admin at `/admin/`.
+DRF was chosen over alternatives like FastAPI because the project already uses Django's ORM, admin, and auth system. Adding DRF has near-zero overhead in that context, and the serializer/view pattern fits well with nested models like `Report → CriminalInfo + Attachments`.
 
 ---
 
-## AI classifier (optional)
+## Why JWT Authentication
 
-Model weights aren't in the repo. To run locally:
+Dashboard users need to stay logged in across sessions without the server storing session state. JWT satisfies that:
 
-1. Get the model files and point `MODEL_DIR` in `reports/ml_model.py` to that folder
-2. Uncomment the prediction block in `reports/views.py`:
+- Access token (1 hour) — short-lived, used for every request
+- Refresh token (7 days) — used only to get a new access token, stored securely by the frontend
 
-```python
-# in ReportListCreateView.perform_create()
-if instance.report_details:
-    from .ml_model import predict_severity
-    instance.severity = predict_severity(instance.report_details)
-    instance.save(update_fields=["severity"])
-```
-
-To backfill severity on existing reports:
-```bash
-python manage.py shell
-```
-```python
-from reports.models import Report
-from reports.ml_model import predict_severity
-
-for report in Report.objects.filter(severity__isnull=True):
-    report.severity = predict_severity(report.report_details)
-    report.save(update_fields=["severity"])
-```
+The custom login serializer (`MyTokenObtainPairSerializer`) adds `role`, `email`, and `status` to the token response so the frontend can gate UI elements immediately without a separate `/me/` call.
 
 ---
 
-## Troubleshooting
+## Why the Public Portal Has No Auth
 
-**`SECRET_KEY` error** — make sure `.env` is in the project root, not inside an app folder.
+Anonymous reporting is the entire point. Requiring registration would defeat the purpose — people don't report crimes because they don't want to be identified. The trade-off is that anyone can submit a report, including fake ones. This is handled by the `is_fake` flag on the Report model, which staff can set manually.
 
-**Migrations fail** — delete `db.sqlite3` and re-run `migrate`, or try `--run-syncdb`.
+---
 
-**CORS errors from the React frontend** — add your dev URL to `CORS_ALLOWED_ORIGINS` in `settings.py`:
-```python
-CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
-```
+## Role System Design
 
-**Emails not arriving** — in dev they print to the terminal. Check there before debugging SendGrid.
+Three roles cover the real-world access pattern of a government reporting system:
+
+- **Admin** — the system owner. Manages staff accounts, sees everything, can delete.
+- **Employee** — a case worker. Can update and close cases but can't touch user accounts.
+- **Viewer** — an observer (e.g. a partner organization). Read-only, and even then sees only non-sensitive fields.
+
+The `status` field on `CustomUser` is separate from `is_active`. `status = 'inactive'` means the account exists but the person shouldn't be accessing live data — used when someone leaves the organization without deleting their account. All views check `status == 'active'` before returning any data.
+
+---
+
+## Report Lifecycle & Archive Split
+
+Active reports and archived reports are served from different endpoints (`/reports/` vs `/reports/archive/`) rather than using a query param. This is intentional:
+
+- The dashboard's "active cases" view never accidentally shows closed cases
+- Archive is a separate tab — a separate concern
+- The split is enforced in `get_queryset()`, not in the frontend
+
+Status transitions that move a report to archive: `تم الحل` and `تم الإغلاق`. These are set manually by staff via `PATCH /reports/<id>/`.
+
+---
+
+## Analytics: Pandas Over Raw SQL
+
+The analytics module uses Pandas DataFrames instead of Django ORM aggregations. The reason: the KPI calculations involve time-bucketing, rolling comparisons (current period vs previous period), and Arabic label mapping — logic that would be verbose and hard to read as ORM annotations.
+
+The Power BI specs provided by the data analyst defined the KPI formulas and chart structures. These were translated into Pandas operations in `utils.py`. The result is a clean separation: Django handles persistence, Pandas handles computation.
+
+One known trade-off: loading all reports into a DataFrame on every request doesn't scale beyond tens of thousands of rows. For the current dataset size this is acceptable. A production-scale version would use database-level aggregations or a caching layer.
+
+---
+
+## Why SQLite in Production
+
+PythonAnywhere's free tier doesn't support external database connections. SQLite is sufficient for the current data volume and access pattern (mostly reads, infrequent writes). The settings file includes the scaffolding to switch to PostgreSQL via `DATABASE_URL` (commented out) when the project moves to a paid environment.
+
+---
+
+## Security Hardening
+
+Production settings (active when `DEBUG=False`) add:
+
+| Setting | Purpose |
+|---|---|
+| `SECURE_SSL_REDIRECT` | Force HTTPS on all requests |
+| `SESSION_COOKIE_SECURE` | Session cookie only over HTTPS |
+| `CSRF_COOKIE_SECURE` | CSRF cookie only over HTTPS |
+| `SESSION_COOKIE_HTTPONLY` | Block JS access to session cookie |
+| `X_FRAME_OPTIONS = DENY` | Prevent clickjacking |
+| `SECURE_CONTENT_TYPE_NOSNIFF` | Prevent MIME type sniffing |
+| `SECURE_BROWSER_XSS_FILTER` | Enable browser XSS protection header |
+
+Input from anonymous reporters is sanitized with `bleach` (strips all HTML tags) on `location`, `report_details`, and `contact_info` before hitting the database.
+
+---
+
+## Email: SendGrid over SMTP
+
+SendGrid was chosen over direct SMTP (Gmail) because:
+- No app-password workarounds needed
+- Better deliverability
+- HTML templates render reliably
+
+Two transactional emails exist: welcome (new staff account with password-setup link) and password reset. Both use Django's token generator (`default_token_generator`) which produces single-use, time-limited tokens tied to the user's current password hash.
+
+---
+
+## AI Classifier (Local Only)
+
+A fine-tuned Arabic BERT model predicts report severity at submission time. It's excluded from the deployed version because the model weights (~400MB) exceed what PythonAnywhere can load in a web worker.
+
+The call in `views.py` is commented out with a clear note. The `severity` field remains on the model and can be set manually by staff in the meantime. The backfill script in `ml_model.py` can be run locally against the production database when needed.
