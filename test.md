@@ -20,7 +20,6 @@ analytics/  how it's aggregated — reads only, never writes
 The following diagram showcases how the frontends, the Django core apps, the database, and the external services interact structurally as isolated components:
 
 ```mermaid
-```mermaid
 flowchart TD
 
     %% Frontends
@@ -64,7 +63,6 @@ flowchart TD
     R -.->|"predict severity"| ML
 
     AN -.->|"read only"| DB
-```
 ```
 ---
 ## Core Domain Models
