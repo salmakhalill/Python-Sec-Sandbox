@@ -2,10 +2,6 @@
 
 # 🛡️ SecureReport
 
-**Anonymous crime reporting platform with authority dashboard**
-
-<br/>
-
 ![Django](https://img.shields.io/badge/Django-5.2-092E20?style=flat-square&logo=django&logoColor=white)
 ![DRF](https://img.shields.io/badge/DRF-3.x-ff1709?style=flat-square&logo=django&logoColor=white)
 ![JWT](https://img.shields.io/badge/Auth-JWT-black?style=flat-square&logo=jsonwebtokens&logoColor=white)
@@ -17,143 +13,81 @@
 
 <br/>
 
-🏆 **Digitopia 2025** — National ICT Competition under Egypt's Ministry of Communications  
-Reached **Phase 3 of 4** in the Cybersecurity & AI track
+🏆 **Digitopia 2025** — reached Phase 3 of 4, Cybersecurity & AI track  
+National ICT Competition · Ministry of Communications, Egypt
 
-<br/>
-
-**Live API →** `https://salmakhalill.pythonanywhere.com`
+**Live API:** `https://salmakhalill.pythonanywhere.com`
 
 </div>
 
 ---
 
-## About
+Most people who witness a crime don't report it — not because they don't care, but because they're scared of being identified. SecureReport is built around that. You fill out a form, get a tracking code, and that's it. No account, no identity, just a code to follow your case.
 
-Most people who witness a crime don't report it — fear of being identified is the main reason.
+On the other side there's a dashboard where the receiving authority logs in, manages incoming cases, and monitors trends through analytics charts.
 
-SecureReport lets anyone file a report completely anonymously, attach evidence, and track their case through a status timeline. No account needed. On the other side, the authority receiving reports gets a full dashboard to manage cases, update statuses, and monitor trends.
-
-> **This repo is the Django backend.**
-> The two React frontends were built by a teammate. My role was the API, database design, analytics module, and deployment — plus the integration work to connect everything with the frontend.
+> **This repo is the backend only.**  
+> The two React frontends were built by a teammate. My role was the API, database design, analytics module, deployment on PythonAnywhere, and all the integration work connecting backend to frontend.
 
 ---
 
 ## Screenshots
 
-| Public portal — status timeline | Authority dashboard |
+| Public portal — tracking timeline | Authority dashboard |
 |---|---|
 | ![Tracking](docs/screenshots/tracking-timeline.png) | ![Dashboard](docs/screenshots/dashboard-analytics.png) |
 
 <div align="center">
-
-![Welcome Email](docs/screenshots/welcome-email.png)  
-*Welcome email sent via SendGrid when a new staff account is created*
-
+<br/>
+<img src="docs/screenshots/welcome-email.png" width="500"/>
+<br/><sub>Welcome email — sent automatically when a new staff account is created</sub>
 </div>
 
 ---
 
-## Features
+## Public portal
 
-<details>
-<summary><b>Public Portal</b></summary>
+Anyone can submit a report — no registration. The form takes location (with optional map link and GPS coordinates), incident date, description, suspect info, and file attachments. Audio files are stored separately from other uploads. On submit, a 12-character tracking code is generated and shown once — the reporter uses it later to check their case status through a visual timeline.
 
-<br/>
+## Authority dashboard
 
-- Anonymous submission — no registration, no identity required
-- 5 report types: Assault · Blackmail · Harassment · Theft · Altercation
-- Location with map link and GPS coordinates
-- Attach audio recordings, images, or documents
-- Auto-generated 12-character tracking code per report
-- Visual status timeline — see exactly where the case stands
+Staff log in with JWT. There are three roles: Admin can do everything including managing other users. Employee handles cases but can't touch accounts. Viewer gets read-only access with limited fields.
 
-</details>
+The dashboard has KPI cards with trend comparisons (total reports, new, under review, critical), analytics charts with a daily/weekly/monthly toggle filterable by year, a geographic heatmap, and a reports table where staff update case status. When a case is marked solved or closed it automatically moves to the archive tab.
 
-<details>
-<summary><b>Authority Dashboard</b></summary>
+Password reset works via email. When an admin creates a new user, a welcome email goes out with a link to set their password — no temporary passwords floating around.
 
-<br/>
+## AI severity classifier *(not deployed)*
 
-- JWT-secured login with role-based access — Admin, Employee, Viewer
-- KPI cards with trend indicators: total, new, under review, critical reports
-- Analytics charts filterable by year — daily / weekly / monthly toggle
-- Geographic heatmap of incidents
-- Reports table — update status, manage active cases
-- Archive — cases auto-move here when solved or closed
-- User management: create accounts, assign roles, send welcome emails
-- Password reset via SendGrid
-
-</details>
-
-<details>
-<summary><b>AI Severity Classifier</b> <i>(local only)</i></summary>
-
-<br/>
-
-Fine-tuned Arabic BERT model that predicts report severity at submission time:  
-**حرج / عالية / متوسطة / منخفضة**
-
-Not deployed — model size exceeds PythonAnywhere limits. The `severity` field stays on the model and can be set manually by staff, or populated via the backfill script in `reports/ml_model.py`.
-
-</details>
+There's a fine-tuned Arabic BERT model that predicts report severity at submission: حرج / عالية / متوسطة / منخفضة. The model weights (~400MB) are too large for PythonAnywhere, so the inference call is commented out in `views.py`. The `severity` field stays on the model and staff can set it manually. There's a backfill script in `reports/ml_model.py` for running it locally when needed.
 
 ---
 
-## Architecture
-
-```
-┌─────────────────────┐     ┌──────────────────────┐
-│   Public Portal     │     │  Authority Dashboard  │
-│   React             │     │  React                │
-└──────────┬──────────┘     └──────────┬────────────┘
-           └──────────────┬────────────┘
-                          │  REST API · CORS · JWT
-                ┌─────────▼───────────┐
-                │    Django Backend   │
-                │                     │
-                │  accounts/          │
-                │  reports/           │
-                │  analytics/         │
-                └─────────┬───────────┘
-                          │
-              ┌───────────┴────────────┐
-              │        SQLite          │
-              └────────────────────────┘
-              Media files · SendGrid
-```
-
-**A few decisions worth knowing about** — full context in [`docs/architecture.md`](docs/architecture.md):
-
-- **SQLite in production** — PythonAnywhere's free tier doesn't support external DB connections. Settings include the PostgreSQL config commented out for when that changes.
-- **Pandas for analytics** — the KPI formulas came from Power BI specs provided by the data analyst teammate and translated naturally into DataFrame operations.
-- **AI classifier is commented out, not removed** — the field stays on the model, staff can set severity manually in the meantime.
-
----
-
-## Tech Stack
+## Tech stack
 
 | | |
 |---|---|
 | Framework | Django 5.2 + Django REST Framework |
-| Auth | SimpleJWT — access 1h · refresh 7d |
+| Auth | SimpleJWT — 1h access token, 7d refresh |
 | Database | SQLite |
-| Analytics | Pandas · NumPy |
-| AI | HuggingFace Transformers — Arabic BERT (local) |
+| Analytics | Pandas + NumPy |
+| AI | HuggingFace Transformers, Arabic BERT (local only) |
 | Email | SendGrid |
-| Sanitization | bleach |
+| Input sanitization | bleach |
 | Deployment | PythonAnywhere |
+
+SQLite is in production because PythonAnywhere's free tier doesn't support external DB connections — the settings file has the PostgreSQL config commented out for when that changes. The analytics module uses Pandas instead of ORM aggregations because the KPI formulas came from Power BI specs and translated naturally into DataFrame operations.
 
 ---
 
-## Project Structure
+## Project structure
 
 ```
-├── config/           → settings, root URLs
-├── accounts/         → users, roles, JWT auth, password reset, SendGrid
-├── reports/          → Report · CriminalInfo · Attachment models + API
-├── analytics/        → KPI computation, chart endpoints
-└── media/            → uploaded files (audio, docs, images)
+accounts/   auth, roles, users, password reset, SendGrid
+reports/    Report · CriminalInfo · Attachment — models, serializers, views
+analytics/  KPI computation and chart endpoints (read-only, never writes)
+config/     settings, root URLs
+media/      uploaded files — audio/ and files/ subdirectories
 ```
 
 ---
@@ -162,85 +96,78 @@ Not deployed — model size exceeds PythonAnywhere limits. The `severity` field 
 
 <details>
 <summary>Reports</summary>
+<br/>
 
 | Method | Endpoint | Auth |
 |---|---|---|
-| `POST` | `/api/reports/` | Public |
-| `GET` | `/api/reports/` | Required |
-| `GET` | `/api/reports/track/<code>/` | Public |
-| `GET` | `/api/reports/archive/` | Required |
-| `PATCH` | `/api/reports/<id>/` | Admin · Employee |
-| `DELETE` | `/api/reports/<id>/` | Admin · Employee |
+| `POST` | `/api/reports/` | public |
+| `GET` | `/api/reports/` | required |
+| `GET` | `/api/reports/track/<code>/` | public |
+| `GET` | `/api/reports/archive/` | required |
+| `PATCH` | `/api/reports/<id>/` | Admin, Employee |
+| `DELETE` | `/api/reports/<id>/` | Admin, Employee |
 
 </details>
 
 <details>
 <summary>Analytics</summary>
+<br/>
 
 | Method | Endpoint | Auth |
 |---|---|---|
-| `GET` | `/analytics/stats/` | Required |
-| `GET` | `/analytics/recent/` | Required |
-| `GET` | `/analytics/site_stats/` | Public |
+| `GET` | `/analytics/recent/` | required |
+| `GET` | `/analytics/stats/` | required |
+| `GET` | `/analytics/site_stats/` | public |
 
 </details>
 
 <details>
 <summary>Accounts</summary>
+<br/>
 
 | Method | Endpoint | Auth |
 |---|---|---|
-| `POST` | `/auth/login/` | Public |
-| `POST` | `/auth/refresh/` | Public |
-| `POST` | `/auth/password_reset/` | Public |
-| `POST` | `/auth/password_reset_confirm/<uid>/<token>/` | Public |
-| `GET · PATCH` | `/account/` | Active user |
+| `POST` | `/auth/login/` | public |
+| `POST` | `/auth/refresh/` | public |
+| `POST` | `/auth/password_reset/` | public |
+| `POST` | `/auth/password_reset_confirm/<uid>/<token>/` | public |
+| `GET · PATCH` | `/account/` | active user |
 | `GET · POST · PATCH · DELETE` | `/users/` | Admin only |
 
 </details>
 
-→ Full request/response examples: [`docs/api/`](docs/api/)
+Full request/response examples → [`docs/api/`](docs/api/)
 
 ---
 
-## Report Lifecycle
-
-```
-Submitted → Received → Under Review → In Progress ┬→ Solved ─→ Archive
-                                                   └→ Closed ─→ Archive
-```
-
----
-
-## Quick Start
+## Quick start
 
 ```bash
 git clone https://github.com/salmakhalill/SecureReport_django.git
 cd SecureReport_django
-
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-
-cp .env.example .env   # SECRET_KEY · DEBUG · SENDGRID_API_KEY · DEFAULT_FROM_EMAIL
-
-python manage.py migrate
-python manage.py createsuperuser
+cp .env.example .env
+python manage.py migrate && python manage.py createsuperuser
 python manage.py runserver
 ```
 
-→ Full setup guide + AI classifier instructions: [`docs/setup.md`](docs/setup.md)
+`.env` needs `SECRET_KEY` · `DEBUG` · `SENDGRID_API_KEY` · `DEFAULT_FROM_EMAIL`  
+Full setup guide with troubleshooting → [`docs/setup.md`](docs/setup.md)
 
 ---
 
-## Documentation
+## Docs
 
 | | |
 |---|---|
-| [`docs/api/`](docs/api/) | Endpoint reference — request/response examples for all three apps |
+| [`docs/api/`](docs/api/) | Endpoint reference — full request/response for all three apps |
 | [`docs/database/erd.md`](docs/database/erd.md) | Entity relationship diagram |
 | [`docs/database/data-dictionary.md`](docs/database/data-dictionary.md) | Field reference for all models |
+| [`docs/sequence-diagrams.md`](docs/sequence-diagrams.md) | Auth, submission, password reset flows |
+| [`docs/class-diagram.md`](docs/class-diagram.md) | Model relationships |
 | [`docs/architecture.md`](docs/architecture.md) | Technical decisions and trade-offs |
-| [`docs/setup.md`](docs/setup.md) | Local setup, AI classifier, troubleshooting |
+| [`docs/setup.md`](docs/setup.md) | Local setup + troubleshooting |
 
 ---
 
