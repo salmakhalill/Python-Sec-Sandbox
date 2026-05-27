@@ -314,8 +314,8 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     actor User
-    participant React as React Frontend
-    participant API as Django API
+    participant React as Dashboard
+    participant API as API
     participant DB
     participant SG as SendGrid
 
