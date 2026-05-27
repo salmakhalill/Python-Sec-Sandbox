@@ -21,9 +21,12 @@ The following diagram showcases how the frontends, the Django core apps, the dat
 
 ```mermaid
 flowchart TD
+
     %% Frontends
-    P["Public Portal"]
-    D["Authority Dashboard"]
+    subgraph F["Frontend Apps"]
+        P["Public Portal"]
+        D["Authority Dashboard"]
+    end
 
     %% Backend
     subgraph B["Django Backend"]
@@ -32,15 +35,18 @@ flowchart TD
         AN["analytics app"]
     end
 
-    %% Services
-    DB[("SQLite / PostgreSQL")]
-    SG["SendGrid"]
-    ML["Arabic BERT Model<br/>(local only)"]
-    MED["Media Storage"]
+    %% Infrastructure
+    subgraph I["Infrastructure & Services"]
+        DB[("SQLite / PostgreSQL")]
+        MED["Media Storage"]
+        SG["SendGrid"]
+        ML["Arabic BERT Model<br/>(local only)"]
+    end
 
-    %% Frontend flows
+    %% Public portal
     P -->|"submit · track"| R
 
+    %% Dashboard
     D -->|"auth"| AC
     D -->|"reports"| R
     D -->|"analytics"| AN
@@ -48,7 +54,7 @@ flowchart TD
     %% Internal dependency
     AN -.->|"imports models"| R
 
-    %% Infrastructure
+    %% Backend connections
     AC --> DB
     AC --> SG
 
